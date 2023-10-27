@@ -81,6 +81,12 @@ class DatabaseConnector:
         #     for row in result:
         #         print(row)
 
+    def upload_to_db(dataframe, table_name):
+        '''
+        Takes a dataframe and converts this to SQL and then uploads it to the database with the table_name
+        '''
+        pass
+
 
 #######
 # Testing
