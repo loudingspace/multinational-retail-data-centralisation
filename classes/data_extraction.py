@@ -84,4 +84,6 @@ pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details
 pdf_df = de.retrieve_pdf_data(pdf_link)
 
 # print(len(pdf_df))
-clean.clean_card_data(pdf_df)
+pdf_df = clean.clean_card_data(pdf_df)
+
+dc.upload_to_db(pdf_df, 'dim_card_details')

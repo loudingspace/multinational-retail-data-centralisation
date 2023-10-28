@@ -146,12 +146,29 @@ class DataCleaning:
 
         # check consistency in card_provider
 
-        print(df.card_provider.unique())
+        print(df.card_provider.unique())  # seems to be consistent.
+        df.card_provider = df.card_provider.astype(
+            'string')  # convert to string
 
         # check for consistency in card number
 
         # are there any non numbers in this?
-        print(df.card_number.str.contains('[^0-9]'))
+        number_regex = '[^0-9]'
+        mask = df['card_number'].str.contains(
+            number_regex, regex=True, na=False)
+        # checked to see if the length of the numbers are correct and they seem to be.
+        print(mask)
+        print(df.card_number[mask])
+        print(df.info(), df.head())
+        df.card_number[mask] = df.card_number[mask].str.replace(
+            '\?', '', regex=True)  # need to escape a ?
+        print(df.card_number[mask])
+
+        print(df.info(), df.head(100))
+
+        # do we need to drop the index column?
+
+        return df
 
     def clean_user_data(self, df):
         '''performs the cleaning of the user data.

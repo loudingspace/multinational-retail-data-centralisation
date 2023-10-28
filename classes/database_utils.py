@@ -89,6 +89,7 @@ class DatabaseConnector:
         try:
             with open('../info/postgresdb_creds.yaml') as file:
                 db_creds = yaml.safe_load(file)
+                # print(db_creds)
 
         except FileNotFoundError:
             print('Sorry, the db config file is not currently available.')
@@ -101,7 +102,10 @@ class DatabaseConnector:
         # DATABASE = 'sales_data'
         # PORT = 5432
 
-        HOST, PASSWORD, USER, DATABASE, PORT = db_creds.values()
+        # print('db_cred: ', type(db_creds))
+
+        # um i thought this was a dictionary. order appears to matter here, so i think it's a list
+        HOST, USER, PASSWORD, DATABASE, PORT = db_creds.values()
 
         engine = create_engine(
             f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
