@@ -12,45 +12,138 @@ class DataCleaning:
 
     # TODO: Write a function for the dates which takes as its argument the column we want to process
 
-    def process_date():
-        pass
-        '''
-        YYYYMONTHDATE = '\d{4}\s[a-zA-Z]+\s\d{2}'
-        YYYYMMDD = '\d{4}\/\d{2}\/\d{2}'
-        MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'
+    def process_date(df, column):
 
-        # https://pandas.pydata.org/pandas-docs/version/1.5/reference/api/pandas.Series.items.html#pandas.Series.items
-        for index, unusual_date in df.date_of_birth[~regular_dates].items():
+        print('\n**** BEFORE ANY PROCESSING **** \n')
+        df.info()
+        print(df.head())
+
+        df.reset_index(inplace=True)  # THINK THE INDEX IS ISSUE
+
+        date_regex = '^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'
+        YYYYMONTHDATE = '\d{4}\s[a-zA-Z]+\s\d{2}'  # 2012 October 21
+        YYYYMMDD = '\d{4}\/\d{2}\/\d{2}'  # 2012/10/21
+        MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'  # October 2012 21
+
+        regular_dates = df[column].str.contains(date_regex)
+        print(df[column][~regular_dates])
+
+        for index, unusual_date in df[column][~regular_dates].items():
             # 1968 October 16 \d{4}\s[a-zA-Z]+\s\d{2}
             if re.search(YYYYMONTHDATE, unusual_date):
-                formatted_date = pd.to_datetime(
-                    unusual_date, format='%Y %B %d', errors='coerce')
-
                 formatted_date = dt.strptime(
                     unusual_date, '%Y %B %d')
 
             # 1971/10/23
             elif re.search(YYYYMMDD, unusual_date):
-                formatted_date = pd.to_datetime(
-                    unusual_date, format='%Y/%m/%d', errors='coerce')
-
                 formatted_date = dt.strptime(
                     unusual_date, '%Y/%m/%d')
 
             # January 1951 27
             elif re.search(MONTHYEARDATE, unusual_date):
-                formatted_date = pd.to_datetime(
-                    unusual_date, format='%B %Y %d', errors='coerce')
-
                 formatted_date = dt.strptime(
                     unusual_date, '%B %Y %d')
 
             else:
                 formatted_date = np.nan
 
-            df.loc[[index], ['date_of_birth']] = formatted_date
+            # i suspect this is this index playing difficulties here
+            df.loc[[index], [column]] = formatted_date
+            print("THIS IS WHAT IS HAPPENING WHEN WE CHANGE THE VALUES: ", index, column)
+
+        print(df[column][~regular_dates])
+
+        # it's complaining about floats so we could try to cast it as a string
+
+        print(df.head())
+        df.info()
+
+        # don't think i need string conversion anymore
+        # df[column][regular_dates] = df[column][regular_dates].astype('string')
+        # print('-------------- After string conversion')
+        # print(df.head())
+        # df.info()
+
+        '''
+        print('************* DEBUG **************')
+        for date in df[column][regular_dates]:
+            if type(date) != 'str':
+                print(date, type(date))
+
+        print('All the null values', print(
+            df[column][regular_dates].isnull().count()))
+        print(df[column][regular_dates].isnull())
+
+        ##########################
         
         '''
+
+        df[column][regular_dates] = df[column][regular_dates].apply(
+            parse)
+
+        df[column][regular_dates] = pd.to_datetime(
+            df[column][regular_dates], infer_datetime_format=True, errors='coerce')
+
+        df[column] = df[column].astype(
+            'datetime64[ns]')  #  why do i need to do this???
+
+        return df
+
+    def clean_card_data(self, df):
+        print(df.iloc[50:70, 0:1])
+
+        # for col in df.columns:
+        #     print("Column: ", col)
+
+        # new_index = pd.Index([x for x in range(0, len(df))])
+        # df.set_index(new_index)
+        # print(df.iloc[50:70, 0:1])
+
+        # we want to reconstruct the index
+        # NOT SURE HOW TO DO THIS
+
+        # remove null values
+
+        # print('The length of the dataframe  is ', len(df))
+        # print(df.info())
+
+        df = df[df.card_number != 'NULL']  # remove null values
+
+        # print('The length of the dataframe AFTER NULL REMOVAL is ', len(df))
+        # print(df.info())
+
+        # check date_payment_confirmed format
+
+        df = DataCleaning.process_date(df, 'date_payment_confirmed')
+        # df = DataCleaning.clean_date(df, 'date_payment_confirmed')
+
+        # check expiry date format - want to convert this to a date format too
+
+        column = 'expiry_date'
+        date_regex = '^\d{2}\/\d{2}$'
+        regular_dates = df[column].str.contains(date_regex)
+        # print(df[column])
+        # print(df[column][~regular_dates])
+        # irregular dates are a strange code. We want to remove all the rows with these in them
+        df[column] = df[column][regular_dates]
+        # let's check these have been deleted
+        # print(df[column][~regular_dates])
+        # print(df[column])
+
+        # Try using .loc[row_indexer,col_indexer] = value instead
+        df.drop(df[column][~regular_dates].index, inplace=True)
+
+        # now convert the dates
+
+        df[column] = pd.to_datetime(
+            df[column], format='%d/%y', errors='ignore')
+
+        # df = df.drop(df[column][~regular_dates], axis=1) THIS DOESN'T WORK
+        # print(df[column])
+
+        df.info()
+
+        # check consistency in card_provider
 
     def clean_user_data(self, df):
         '''performs the cleaning of the user data.
@@ -252,6 +345,8 @@ class DataCleaning:
         # print(df.date_of_birth[~regular_dates])
         print(df.head())
 
+        # df.date_of_birth.dt.normalize()
+
         '''
         https://stackoverflow.com/questions/45858155/removing-the-timestamp-from-a-datetime-in-pandas-dataframe
 
@@ -269,11 +364,19 @@ class DataCleaning:
 
         # print(df.phone_number)
 
-        # Our regular expression to match
-        regex_expression = '^(?:(?:\(?(?:0(?:0|11)\)?[\s-]?\(?|\+)44\)?[\s-]?(?:\(?0\)?[\s-]?)?)|(?:\(?0))(?:(?:\d{5}\)?[\s-]?\d{4,5})|(?:\d{4}\)?[\s-]?(?:\d{5}|\d{3}[\s-]?\d{3}))|(?:\d{3}\)?[\s-]?\d{3}[\s-]?\d{3,4})|(?:\d{2}\)?[\s-]?\d{4}[\s-]?\d{4}))(?:[\s-]?(?:x|ext\.?|\#)\d{3,4})?$'
+        '''
+        
+        
+        # Our regular expression to match THIS IS FOR BRITISH NUMBERS
+        regex_expression = '^(?:(?:\(?(?:0(?:0|11)\)?[\s-]?\(?|\+)44+\)?[\s-]?(?:\(?0\)?[\s-]?)?)|(?:\(?0))(?:(?:\d{5}\)?[\s-]?\d{4,5})|(?:\d{4}\)?[\s-]?(?:\d{5}|\d{3}[\s-]?\d{3}))|(?:\d{3}\)?[\s-]?\d{3}[\s-]?\d{3,4})|(?:\d{2}\)?[\s-]?\d{4}[\s-]?\d{4}))(?:[\s-]?(?:x|ext\.?|\#)\d{3,4})?$'
         # For every row  where the Phone column does not match our regular expression, replace the value with NaN
         df.loc[~df['phone_number'].str.match(
-            regex_expression), 'Phone'] = np.nan
+            regex_expression), 'phone_number'] = np.nan
+        # df.Phone = df.Phone.astype('string')
+        
+        '''
+
+        print(df.head(20))
 
         # print('Null phone ', df.phone_number.isna().sum())
 

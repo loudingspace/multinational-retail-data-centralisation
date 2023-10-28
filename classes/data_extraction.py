@@ -2,6 +2,7 @@ from database_utils import DatabaseConnector
 from data_cleaning import DataCleaning
 from sqlalchemy import text, exc
 import pandas as pd
+import tabula
 
 
 class DataExtraction:
@@ -46,6 +47,23 @@ class DataExtraction:
         except ValueError as e:
             print("There was a problem reading the table from the database\n\t\t", e)
 
+    def retrieve_pdf_data(self, link):
+        ''' takes a pdf and returns a dataframe
+
+        Argument: link where a pdf is hosted
+
+        Returns: dataframe
+        '''
+        df_list = tabula.read_pdf(
+            link, pages="all")  # https://pypi.org/project/tabula-py/
+        print('Length of list is ', len(df_list))
+
+        result = pd.concat(df_list)
+
+        # so we want to concatenate the list, ignoring the top column
+
+        return result
+
 
 ##### Test #####
 dc = DatabaseConnector()
@@ -57,42 +75,13 @@ table_list = dc.list_db_tables()
 
 # Use the read_rds_table method to extract the table containing user data and return a pandas DataFrame.
 df = de.read_rds_table(dc.init_db_engine(), table_list[1])
-# print(df.head(10))
-
-# for n in [360, 697, 752, 1046, 1629, 1996, 2995, 3066, 3536, 3613, 3797, 4205,
-#           4592,
-#           5306,
-#           5350,
-#           5423,
-#           5531,
-#           6108,
-#           6221,
-#           6420,
-#           7168,
-#           7259,
-#           8117,
-#           8273,
-#           8386,
-#           8524,
-#           9013,
-#           9934,
-#           10211,
-#           10245,
-#           10360,
-#           11203,
-#           11366,
-#           12177,
-#           13045,
-#           13111,
-#           13159,
-#           14101,
-#           14105,
-#           14499,
-#           14546,
-#           15302]:
-#     print(df.iloc[n])
-
 
 clean.clean_user_data(df)
 
-# print(df.date_of_birth[temp])
+dc.upload_to_db(df, 'dim_users')  # for testing datacleaning
+
+pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
+pdf_df = de.retrieve_pdf_data(pdf_link)
+
+# print(len(pdf_df))
+clean.clean_card_data(pdf_df)

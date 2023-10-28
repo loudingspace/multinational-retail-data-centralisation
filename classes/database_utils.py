@@ -1,5 +1,5 @@
 import yaml
-from sqlalchemy import create_engine, inspect, exc
+from sqlalchemy import create_engine, inspect, exc, text
 import pandas as pd  # not sure if we need this, but it was int he example files
 
 # I think this should probably be private, at the most protected
@@ -81,11 +81,28 @@ class DatabaseConnector:
         #     for row in result:
         #         print(row)
 
-    def upload_to_db(dataframe, table_name):
+    def upload_to_db(self, df, table_name):
         '''
         Takes a dataframe and converts this to SQL and then uploads it to the database with the table_name
         '''
-        pass
+
+        #  this needs tidying up
+        HOST = '127.0.0.1'
+        USER = 'postgres'
+        PASSWORD = 'ronald22'
+        DATABASE = 'sales_data'
+        PORT = 5432
+
+        engine = create_engine(
+            f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
+
+        with engine.connect() as connection:
+            # result = connection.execute(
+            #     text("SELECT * FROM information_schema.schemata"))
+            # for row in result:
+            #     print(row)
+
+            df.to_sql(table_name, engine, if_exists='replace', index=False)
 
 
 #######
