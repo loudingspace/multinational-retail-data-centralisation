@@ -86,12 +86,22 @@ class DatabaseConnector:
         Takes a dataframe and converts this to SQL and then uploads it to the database with the table_name
         '''
 
-        #  this needs tidying up
-        HOST = '127.0.0.1'
-        USER = 'postgres'
-        PASSWORD = 'ronald22'
-        DATABASE = 'sales_data'
-        PORT = 5432
+        try:
+            with open('../info/postgresdb_creds.yaml') as file:
+                db_creds = yaml.safe_load(file)
+
+        except FileNotFoundError:
+            print('Sorry, the db config file is not currently available.')
+
+        # # TODO: Need to change this to make it more secure
+        # #  this needs tidying up
+        # HOST = '127.0.0.1'
+        # USER = 'postgres'
+        # PASSWORD = 'ronald22'
+        # DATABASE = 'sales_data'
+        # PORT = 5432
+
+        HOST, PASSWORD, USER, DATABASE, PORT = db_creds.values()
 
         engine = create_engine(
             f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")

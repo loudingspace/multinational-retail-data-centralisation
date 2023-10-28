@@ -142,8 +142,16 @@ class DataCleaning:
         # print(df[column])
 
         df.info()
+        print(df.head())
 
         # check consistency in card_provider
+
+        print(df.card_provider.unique())
+
+        # check for consistency in card number
+
+        # are there any non numbers in this?
+        print(df.card_number.str.contains('[^0-9]'))
 
     def clean_user_data(self, df):
         '''performs the cleaning of the user data.
