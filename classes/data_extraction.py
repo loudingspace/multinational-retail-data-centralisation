@@ -199,9 +199,19 @@ dc.upload_to_db(stores_df, 'dim_stores_details')
 
 '''
 
+''''
 # Task6
 
 products_df = de.extract_from_s3()
 products_df = clean.convert_product_weight(products_df)
 products_df = clean.clean_products_data(products_df)
 dc.upload_to_db(products_df, 'dim_products')
+'''
+
+# Task 7
+table_list = dc.list_db_tables()
+print(table_list)
+order_df = de.read_rds_table(dc.init_db_engine(), table_list[2])
+print(order_df.info())
+order_df = clean.clean_orders_table(order_df)
+dc.upload_to_db(order_df, 'orders_table')

@@ -14,6 +14,61 @@ class DataCleaning:
     This will have methods to clean data from each of the data sources
     '''
 
+    def clean_orders_table(self, df):
+        ''' Cleans the orders database stored in the RDS database
+
+        Argument: df
+
+        Returns: df
+        '''
+
+        # You should remove the columns, first_name, last_name and 1 to have the table in the correct form before uploading to the database.
+        # You will see that the orders data contains column headers which are the same in other tables.
+        df.info()
+        df.drop(['first_name', 'last_name', '1'], axis=1, inplace=True)
+
+        df.info()
+
+        # remove nulls
+        df = df[df.level_0 != 'NULL']
+
+        # print(df.isna().sum())
+        # print(df.isna().count())
+        # print(df.head())
+
+        def clean_explore(regex, column):
+            mask = df[column].str.contains(
+                regex, regex=True, na=False)
+            print(column, " : ", df[column][~mask].count(), df[column][~mask])
+
+        #  0   level_0           120123 non-null  int64
+        #  1   index             120123 non-null  int64
+        #  2   date_uuid         120123 non-null  object ✅
+        #  3   user_uuid         120123 non-null  object ✅
+        #  4   card_number       120123 non-null  int64 ✅ (they are all int64 anyways - should convert other credit card columns to this format)
+        #  5   store_code        120123 non-null  object ✅
+        #  6   product_code      120123 non-null  object ✅
+        #  7   product_quantity  120123 non-null  int64 ✅
+
+        # mask = df.user_uuid.str.contains(
+        #     '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
+        # print('user_uuid ', df.user_uuid[~mask].count(), df.user_uuid[~mask])
+
+        # clean_explore('[a-zA-Z]+', 'card_number')
+        # clean_explore('^[A-Z]+-\w{8}$', 'store_code')
+        # clean_explore('\w{2}-\d+\w{1}', 'product_code')
+        # print(df.product_quantity.min(), df.product_quantity.max())
+        # print(df.level_0.min(), df.level_0.max())
+        # print(df.index.min(), df.index.max())
+
+        #  i've been dropping the indexes, and as it appear index and level_0 are the same, I'm going to drop these too
+        df.drop(columns=['index', 'level_0'], inplace=True)
+
+        # df.head()
+        # df.info()
+
+        return df
+
     def process_date(df, column):
 
         # print('\n**** BEFORE ANY PROCESSING **** \n')
