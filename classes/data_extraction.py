@@ -5,6 +5,7 @@ import pandas as pd
 import tabula
 import requests
 import boto3
+import json
 
 
 class DataExtraction:
@@ -32,6 +33,24 @@ class DataExtraction:
 
         # print(df.info())
         return df
+
+    def extract_date_events(self):
+        header = {
+            "Content-Type": "application/json",
+            "X-API-Key": "yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX"
+        }
+
+        response = requests.get(
+            'https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json', headers=header)
+
+        with open("../temp/date_details.json", "w") as f:
+            json.dump(response.json(), f)
+
+        # so it's a dictionary and we need to extract the columns as dictionary key, values, where inside they are of the format index : value
+
+        # df = pd.read_json(response.json(), orient='index')
+        # df = pd.json_normalize(response.json())
+        # print(df.head())
 
     def read_rds_database(self):
         '''reads in the database from the RDS connection
@@ -208,6 +227,7 @@ products_df = clean.clean_products_data(products_df)
 dc.upload_to_db(products_df, 'dim_products')
 '''
 
+'''
 # Task 7
 table_list = dc.list_db_tables()
 print(table_list)
@@ -215,3 +235,6 @@ order_df = de.read_rds_table(dc.init_db_engine(), table_list[2])
 print(order_df.info())
 order_df = clean.clean_orders_table(order_df)
 dc.upload_to_db(order_df, 'orders_table')
+'''
+
+de.extract_date_events()
