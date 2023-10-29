@@ -25,8 +25,13 @@ class DataExtraction:
         # TODO: have to use the AWS CLI
 
         s3 = boto3.client('s3')
-        s3.download_file('my-boto3-bucket-maya', 'memes/cloud-meme.jpeg',
-                         '/Users/maya/Downloads/new-cloud-meme.jpeg')
+        s3.download_file('data-handling-public', 'products.csv',
+                         '../temp/products.csv')
+
+        df = pd.read_csv('../temp/products.csv', index_col=0)
+
+        # print(df.info())
+        return df
 
     def read_rds_database(self):
         '''reads in the database from the RDS connection
@@ -193,3 +198,10 @@ stores_df = clean.clean_store_data(stores_df)
 dc.upload_to_db(stores_df, 'dim_stores_details')
 
 '''
+
+# Task6
+
+products_df = de.extract_from_s3()
+products_df = clean.convert_product_weight(products_df)
+products_df = clean.clean_products_data(products_df)
+dc.upload_to_db(products_df, 'dim_products')

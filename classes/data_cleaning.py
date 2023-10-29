@@ -3,6 +3,7 @@ from dateutil.parser import parse
 from datetime import datetime as dt
 import numpy as np
 import re
+import math
 
 # TODO: the clean_user_data() needs refactoring big time. But we will leave this to later as want to get the functionality there first, then refactor when things are operational
 # TODO: don't need to return a df in clean_card_date
@@ -15,9 +16,9 @@ class DataCleaning:
 
     def process_date(df, column):
 
-        print('\n**** BEFORE ANY PROCESSING **** \n')
-        df.info()
-        print(df.head())
+        # print('\n**** BEFORE ANY PROCESSING **** \n')
+        # df.info()
+        # print(df.head())
 
         df.reset_index(inplace=True)  # THINK THE INDEX IS ISSUE
 
@@ -27,7 +28,7 @@ class DataCleaning:
         MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'  # October 2012 21
 
         regular_dates = df[column].str.contains(date_regex, na=False)
-        print(df[column][~regular_dates])
+        # print(df[column][~regular_dates])
 
         for index, unusual_date in df[column][~regular_dates].items():
             # 1968 October 16 \d{4}\s[a-zA-Z]+\s\d{2}
@@ -35,7 +36,7 @@ class DataCleaning:
             # print(unusual_date, type(unusual_date))
 
             if isinstance(unusual_date, float):
-                print('this identifies ', unusual_date, ' as a float')
+                # print('this identifies ', unusual_date, ' as a float')
                 continue  # this is get around a float exception for the regular expression
 
             print(index, 'Carrying on after type check')
@@ -58,14 +59,14 @@ class DataCleaning:
 
             # i suspect this is this index playing difficulties here
             df.loc[[index], [column]] = formatted_date
-            print("THIS IS WHAT IS HAPPENING WHEN WE CHANGE THE VALUES: ", index, column)
+            # print("THIS IS WHAT IS HAPPENING WHEN WE CHANGE THE VALUES: ", index, column)
 
-        print(df[column][~regular_dates])
+        # print(df[column][~regular_dates])
 
         # it's complaining about floats so we could try to cast it as a string
 
-        print(df.head())
-        df.info()
+        # print(df.head())
+        # df.info()
 
         # don't think i need string conversion anymore
         # df[column][regular_dates] = df[column][regular_dates].astype('string')
@@ -87,11 +88,12 @@ class DataCleaning:
         
         '''
 
-        df[column][regular_dates] = df[column][regular_dates].apply(
+        # i changed orded of mask and column for the following 2 lines:
+        df[regular_dates][column] = df[regular_dates][column].apply(
             parse)
 
-        df[column][regular_dates] = pd.to_datetime(
-            df[column][regular_dates], infer_datetime_format=True, errors='coerce')
+        df[regular_dates][column] = pd.to_datetime(
+            df[regular_dates][column], errors='coerce')
 
         df[column] = df[column].astype(
             'datetime64[ns]')  #  why do i need to do this???
@@ -123,7 +125,7 @@ class DataCleaning:
 
         # print(df.longitude.unique())  # these need to be NN.NN+
         mask = df.longitude.str.contains('\d{2}\.\d{1}', na=False)
-        df = df[mask]
+        df = df[mask]  # is this where we dispense of the garbage values?
         # print('+++++++++++++++++++', df.longitude.unique())
         df.longitude = df.longitude.astype('float')
 
@@ -268,6 +270,229 @@ class DataCleaning:
 
         df.drop(columns=['index'], inplace=True)
 
+        return df
+
+    def convert_product_weight(self, df):
+        ''' Converts the weights column to a decimal value representing their weight in kg. Use a 1:1 ratio of ml to g as a rough estimate for the rows containing ml.
+
+        Parameter: dataframe
+
+        Returns: dataframe
+        '''
+
+        '''
+        print(df.weight)
+        regex = '[a-zA-Z]+'
+        all_weights = df.weight.str.findall(regex)
+
+        # print(df.weight[df.weight.str.contains('x', na=False)])
+        print(df.weight[df.weight.str.contains('nan', na=False)])
+        print(df.weight[df.weight.str.contains(
+            '[0-9]*[A-Z]+\d*[A-Z]*', na=False, regex=True)])
+        print(df.weight.isna().sum())
+        
+        '''
+
+        # print(all_weights.explode().unique()) ['kg' 'g' nan 'x' 'GO' 'NZ' 'JTL' 'Z' 'ZTDGUZVU' 'MX' 'RYSHX' 'ml' 'oz']
+        # I am hypothesising that all upper case letters are junk
+        # This leaves: kg, g, ml, oz. I am not sure 'x'
+        # It is of the form  12 x 100g --> these are all in grams, so we can convert all of these to kg from grams
+        #  only one case of ounces, oz
+        # need to count nan -> there are 4
+
+        # if we have 8g x 8, we need to do the calculation first and then return value divided by 1000
+        # regex = '\d+\s\x\s\d+g'
+        # calculation_regex = re.compile(r'(\d+)\s\\x\s(\d+)g')
+
+        # for w in df.weight:
+        #     # print(w)
+        #     if not math.isnan(w):
+        #         reg = calculation_regex.search(w)
+        #         if reg:
+        #             print('\t\t', reg.group(1), reg.group(2))
+
+        # if grams, return the value divided by 1000
+        # if df.weight.str.contains('g'):
+        #     pass
+        # if value is in ml, we divide by 1000
+
+        # shall we do it by masks?
+
+        # TODO: refactor this so it is one formula
+
+        def process_product_weight(regex, lambda_formula):
+            mask = df['weight'].str.contains(
+                regex, regex=True, na=False)
+            df.weight[mask] = df['weight'][mask].apply(lambda_formula)
+            print(df.weight[mask])  # for debugging
+
+        # kg
+        process_product_weight(
+            '(\d+)[k][g]', lambda_formula=lambda x: x.split('kg')[0])
+        # print(df[df['weight'].str.contains(
+        #     '(\d+)[k][g]', regex=True, na=False)]['weight'])
+
+        # ml
+        process_product_weight(
+            '(\d+)[m][l]', lambda x: float(x.split('ml')[0]) / 1000)
+
+        # n x g
+        process_product_weight('\d+\s[x]\s\d+[g]', lambda x: float(
+            float(x.split(' x ')[0]) * float(x.split(' x ')[1].split('g')[0])) / 1000)
+
+        # g
+        process_product_weight(
+            '\d+[g]', lambda x: float(x.split('g')[0]) / 1000)
+
+        # oz 1 is 0.02834952kg
+        process_product_weight(
+            '\d+[o][z]', lambda x: (float(x.split('oz')[0]) * 0.02834952))
+
+        # finally, the junk. Let's convert those to nan, then convert whole lot to float
+
+        process_product_weight('[A-Z]', lambda x: np.nan)
+
+        df.weight = df.weight.astype(float)
+        # df.info()
+        # print(df.head(30))
+
+        return df
+
+        # TODO: i would like to do this using regular expression grouping but I can't get this to work
+
+        '''
+        
+        kg_regex = '(\d+)[k][g]'
+        mask = df['weight'].str.contains(
+            kg_regex, regex=True, na=False)
+        # df[mask]['weight'] = df[mask]['weight'].apply(
+        #    lambda x: x.split('kg')[0])
+        df.weight[mask] = df['weight'][mask].apply(  # so just by changing the order, putting the mask at the end this can help with these problems https://realpython.com/pandas-settingwithcopywarning/
+            lambda x: x.split('kg')[0])
+        # df.loc(df['weight'].str.contains(kg_regex, regex=True, na=False), 'weight') = df.loc(df['weight'].str.contains(
+        #     kg_regex, regex=True, na=False), 'weight').apply(
+        #     lambda x: x.split('kg')[0])
+        print(df[mask]['weight'])
+
+        ml_regex = '(\d+)[m][l]'
+        mask = df['weight'].str.contains(
+            ml_regex, regex=True, na=False)
+        df.weight[mask] = df['weight'][mask].apply(
+            lambda x: float(x.split('ml')[0]) / 1000)
+        print(df[mask]['weight'])
+
+        
+        x_g_regex = '\d+\s[x]\s\d+[g]'
+        mask = df['weight'].str.contains(
+            x_g_regex, regex=True, na=False)
+        df.weight[mask] = df['weight'][mask].apply(
+            lambda x: float(float(x.split(' x ')[0]) * float(x.split(' x ')[1].split('g')[0])) / 1000)
+        print(df[mask]['weight'])
+        '''
+
+        # def process_product_weight(regex, lambda_formula):
+        #     mask = df['weight'].str.contains(
+        #         regex, regex=True, na=False)
+        #     df.weight[mask] = df['weight'][mask].apply(lambda_formula
+        #     )
+
+        # for w in df.weight:
+        #     # so the case of the 2 x 4 is the exception, so we can deal with that first
+        #     print(type(w), w)
+        #     regex = '\d+\s\\x\s\d+g'
+        #     if w.contains(regex, regex=True):
+        #         numbers = w.split(' x ')
+        #         print(numbers)
+
+    def clean_products_data(self, df):
+        '''Clean remaining columns of products df
+
+        Argument: dataframe
+
+        Returns: dataframe
+
+        '''
+
+        # remove nulls
+        df = df[df.product_name != 'NULL']
+
+        for column in df.columns:
+            print(column, df[column].nunique())
+
+        # product_name 1021
+        print(df.product_name.unique())
+        # 828 values are duplicated but with different added dates
+        print(df.product_name[df.product_name.duplicated()].count())
+        print(df[df.product_name.duplicated()].head(30))
+        print(df.product_name.groupby(
+            df.product_name[df.product_name.duplicated()]).count())  # The date added values are different, as well as the uuid, so going to leave in for now
+
+        # product_price 132
+        # get rid of the £ signs. But delete any values that don't have pound signs beforehand!
+        print(df.product_price.unique())
+
+        regex = '[£]\d+.\d+'
+        mask = df.product_price.str.contains(regex, regex=True, na=False)
+        # print(len(df))
+        df = df[mask]  # this drops the garbage data rows
+        # print(len(df))
+        df.product_price = df.product_price.apply(
+            lambda x: float(x.split('£')[1]))
+        # df.product_price = df.product_price.astype(float)
+        # the currency representation is a bit odd in the database - 7 is not 7.00.
+
+        ''''
+        mask = df['weight'].str.contains(
+                regex, regex=True, na=False)
+            df.weight[mask] = df['weight'][mask].apply(lambda_formula)
+        '''
+
+        # date_added 1704
+        df = DataCleaning.process_date(df, 'date_added')
+        '''
+        # df.info()
+        # print(df.head())
+        # print(df.loc[[306]])
+        
+        '''
+        # weight 386 DONE
+
+        # category 7
+
+        # print('UNIQUE CATEORIES', df.category.unique(), df.category.nunique())
+        df.category = df.category.astype('string')
+
+        # EAN 1849 -- let's check this for any letters as they seem to be numbers only
+
+        # print('EAN stuff now:',
+        #     df.EAN[df.EAN.str.contains('^[1]', regex=True)])
+        # not sure what to do with EANs - going to leave as is for the time being, as not clear if they need to be a number
+
+        # uuid 1849
+
+        # these seem to be 36 letters long and conform to a format of \w{8}-\w{4}-\w{4}-\w{12}
+        # print(df.uuid.unique())
+        # mask = df.uuid.str.contains(
+        #    '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
+        # print('UUID ', df.uuid[~mask].count(), df.uuid[mask])
+        # uuid appear to be regular
+
+        # removed 2
+        # print(df.removed.unique())
+        df.removed = df.removed.astype('string')
+
+        # product_code 1849
+        # print(df.product_code)
+
+        # mask = df.product_code.str.contains(
+        #     '\w{2}-\d{7}\w{1}', regex=True, na=False)
+        # print('Product Code ',
+        #       df.product_code[~mask].count(), '\n', df.product_code[~mask]) # these appear to be not concerning
+
+        print(df.info())
+        print(df.head())
+
+        df.drop(columns=['index'], inplace=True)
         return df
 
     def clean_user_data(self, df):
