@@ -4,13 +4,14 @@ from datetime import datetime as dt
 import numpy as np
 import re
 
+# TODO: the clean_user_data() needs refactoring big time. But we will leave this to later as want to get the functionality there first, then refactor when things are operational
+# TODO: don't need to return a df in clean_card_date
+
 
 class DataCleaning:
     '''
     This will have methods to clean data from each of the data sources
     '''
-
-    # TODO: Write a function for the dates which takes as its argument the column we want to process
 
     def process_date(df, column):
 
@@ -25,11 +26,19 @@ class DataCleaning:
         YYYYMMDD = '\d{4}\/\d{2}\/\d{2}'  # 2012/10/21
         MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'  # October 2012 21
 
-        regular_dates = df[column].str.contains(date_regex)
+        regular_dates = df[column].str.contains(date_regex, na=False)
         print(df[column][~regular_dates])
 
         for index, unusual_date in df[column][~regular_dates].items():
             # 1968 October 16 \d{4}\s[a-zA-Z]+\s\d{2}
+
+            # print(unusual_date, type(unusual_date))
+
+            if isinstance(unusual_date, float):
+                print('this identifies ', unusual_date, ' as a float')
+                continue  # this is get around a float exception for the regular expression
+
+            print(index, 'Carrying on after type check')
             if re.search(YYYYMONTHDATE, unusual_date):
                 formatted_date = dt.strptime(
                     unusual_date, '%Y %B %d')
@@ -87,6 +96,95 @@ class DataCleaning:
         df[column] = df[column].astype(
             'datetime64[ns]')  #  why do i need to do this???
 
+        return df
+
+    def clean_store_data(self, df):
+        '''cleans the data retrieve from the API and returns a pandas DataFrame.
+
+        Parameters: dataframe
+
+        Returns: dataframe
+        '''
+
+        # check for null values
+
+        print(df.isna().values.sum())
+        # NULL appears to appear in all rows when it does appear
+        df = df[df.opening_date != 'NULL']
+
+        print('NULLS... ', df[df.opening_date == 'NULL'])
+
+        # clean up addresses by replacing \n for ', '
+
+        df.address = df.address.str.replace('\n', ', ')
+        df.address = df.address.astype('string')
+
+        # longitude - replace None with null values
+
+        # print(df.longitude.unique())  # these need to be NN.NN+
+        mask = df.longitude.str.contains('\d{2}\.\d{1}', na=False)
+        df = df[mask]
+        # print('+++++++++++++++++++', df.longitude.unique())
+        df.longitude = df.longitude.astype('float')
+
+        # let's drop the column Lat as it is empty
+        df.drop(['lat'], axis=1, inplace=True)
+
+        # check any abnormalities with locality
+
+        df.locality = df.locality.astype('string')
+
+        # check store type
+        # print(df.store_type.unique()) # seems ok, there are 4 categories
+
+        # check for any abnormalities with store code
+
+        column = 'store_code'  # this should be a function as I use this a lot
+        regex = '^[A-Z]+-\w{8}$'
+        mask = df[column].str.contains(regex, na=False)
+        # print(mask.unique())
+        # print(~mask)
+        print('The number of non-compliant store codes is ',
+              len(df[column][~mask]))
+        df.store_code = df.store_code.astype('string')
+
+        # make sure staff numbers are all numbers - they aren't!!
+        # df.staff_numbers = df.staff_numbers.astype('int16')
+        # these need to be NN.NN+
+        print('STAFF NUMBERS', df.staff_numbers.unique())
+        # mask = df.staff_numbers.str.contains('\d+', na=False)
+        # print(df[mask])
+        # df = df[mask]
+        # There appear to be random letters inserted in the numbers. Let's assume these need removing so we can have a proper number
+        df.staff_numbers = df.staff_numbers.str.replace(
+            '[a-zA-Z]', '', regex=True)
+        df.staff_numbers = df.staff_numbers.astype('int16')
+
+        # process the opening date
+        DataCleaning.process_date(df, 'opening_date')
+
+        df.store_type = df.store_type.astype('string')
+        df.latitude = df.latitude.astype('float')
+
+        # print(df.country_code.unique()) - there are three country codes
+        # print(df.continent.unique()) ## there is a mistake in the continents with the addition of 'ee'. Let's replace that
+
+        df.country_code = df.country_code.astype('string')
+
+        # print(df.continent.unique())
+        df.continent = df.continent.str.replace('ee', '')
+        # print(df.continent.unique())
+        df.continent = df.continent.astype('string')
+
+        ''''
+        The dates tell us which are the lines with gobbledegook in them, so we want to drop those rows.
+
+        Lat seems meaningless - does it have any meaningful values?
+        '''
+
+        df.info()
+
+        df.drop(columns=['index'], inplace=True)
         return df
 
     def clean_card_data(self, df):
@@ -157,16 +255,18 @@ class DataCleaning:
         mask = df['card_number'].str.contains(
             number_regex, regex=True, na=False)
         # checked to see if the length of the numbers are correct and they seem to be.
-        print(mask)
-        print(df.card_number[mask])
-        print(df.info(), df.head())
+        # print(mask)
+        # print(df.card_number[mask])
+        # print(df.info(), df.head())
         df.card_number[mask] = df.card_number[mask].str.replace(
             '\?', '', regex=True)  # need to escape a ?
-        print(df.card_number[mask])
+        # print(df.card_number[mask])
 
-        print(df.info(), df.head(100))
+        # print(df.info(), df.head(100))
 
         # do we need to drop the index column?
+
+        df.drop(columns=['index'], inplace=True)
 
         return df
 
@@ -183,14 +283,14 @@ class DataCleaning:
         rows filled with the wrong information.
         '''
 
-        print('Cleaning mode begun: ')
+        # print('Cleaning mode begun: ')
 
         # check for nulls
-        print('1-- Checking for null or na values')
+        # print('1-- Checking for null or na values')
 
         # first we check with standard check
-        print(df.isna().sum())  # comes up with zero
-        print(df.isnull().sum())
+        # print(df.isna().sum())  # comes up with zero
+        # print(df.isnull().sum())
 
         # this comes up as all ok, so let's delve deeper:
         # for column in df.columns:
@@ -207,9 +307,9 @@ class DataCleaning:
 
         # df.info()
         # we now have an object with the index values. Iterate through these to drop the null values
-        print('++++++++++')
+        # print('++++++++++')
         for row in index:
-            print('Deleting ', row)
+            # print('Deleting ', row)
             df.drop(row, inplace=True)
 
         # df.info()
@@ -224,7 +324,7 @@ class DataCleaning:
         # mask2 = (df.date_of_birth.str.len() > 10) & (
         #     df['date_of_birth'].str[0].str.isdigit())  # note you need to index the string and then use str again to use isdigit()
 
-        print(df.head())
+        # print(df.head())
 
         # --- correctly type the values
 
@@ -244,10 +344,10 @@ class DataCleaning:
             '\d{4}-\d{2}-\d{2}')  # these should be all the valid dates
         '''
 
-        print(df.address)
+        # print(df.address)
 
-        print('!!!!!!!! Before date manipulation\n')
-        print(df.info())
+        # print('!!!!!!!! Before date manipulation\n')
+        # print(df.info())
 
         # df['just_date'] = df['dates'].dt.date   should keep just date part
 
@@ -261,7 +361,7 @@ class DataCleaning:
         # join_date
 
         regular_dates = df.join_date.str.contains(date_regex)
-        print(df.join_date[~regular_dates])
+        # print(df.join_date[~regular_dates])
 
         for index, unusual_date in df.join_date[~regular_dates].items():
             # 1968 October 16 \d{4}\s[a-zA-Z]+\s\d{2}
@@ -293,7 +393,7 @@ class DataCleaning:
 
             df.loc[[index], ['join_date']] = formatted_date
 
-        print(df.join_date[~regular_dates])
+        # print(df.join_date[~regular_dates])
 
         df.join_date[regular_dates] = df.join_date[regular_dates].apply(
             parse)
@@ -342,8 +442,8 @@ class DataCleaning:
             df.loc[[index], ['date_of_birth']] = formatted_date
 
         # debug
-        for value in df.date_of_birth[~regular_dates]:
-            print(type(value), value)
+        # for value in df.date_of_birth[~regular_dates]:
+        #     print(type(value), value)
 
         # Now we can convert the standard dates
 
@@ -363,12 +463,15 @@ class DataCleaning:
         df.date_of_birth = df.date_of_birth.astype(
             'datetime64[ns]')  #  why do i need to do this???
 
+        # drop the index, as we don't need it for the sql
+        df.drop(columns=['index'], inplace=True)
+
         # df.date_of_birth.dt.normalize()
         # print(df.date_of_birth[~regular_dates])
 
-        print(df.info())
+        # print(df.info())
         # print(df.date_of_birth[~regular_dates])
-        print(df.head())
+        # print(df.head())
 
         # df.date_of_birth.dt.normalize()
 
@@ -401,7 +504,7 @@ class DataCleaning:
         
         '''
 
-        print(df.head(20))
+        # print(df.head(20))
 
         # print('Null phone ', df.phone_number.isna().sum())
 

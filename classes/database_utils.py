@@ -97,7 +97,7 @@ class DatabaseConnector:
 #######
 # Testing
 #######
-a = DatabaseConnector()
-# a.read_db_creds()
-# a.init_db_engine()
-a.list_db_tables()
+# a = DatabaseConnector()
+# # a.read_db_creds()
+# # a.init_db_engine()
+# a.list_db_tables()
