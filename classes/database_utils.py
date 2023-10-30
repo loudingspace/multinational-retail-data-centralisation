@@ -1,9 +1,6 @@
-import yaml
-from sqlalchemy import create_engine, inspect, exc, text
-import pandas as pd  # not sure if we need this, but it was int he example files
 import os
-
-# I think this should probably be private, at the most protected
+import yaml
+from sqlalchemy import create_engine, inspect, exc
 
 
 class DatabaseConnector:
@@ -17,22 +14,14 @@ class DatabaseConnector:
     def __init__(self):
         try:
             pathname = self.SYSTEMPATH + '/info/postgresdb_creds.yaml'
-            # print(pathname)
 
-            # need to replace this with pathname
             with open(pathname) as file:
                 db_creds = yaml.safe_load(file)
-
-                # print(db_creds)
 
                 HOST, USER, PASSWORD, DATABASE, PORT = db_creds.values()
 
             self.engine = create_engine(
                 f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
-
-            # with open(pathname) as file:
-            #     db_creds = yaml.safe_load(file)
-            #     print(db_creds)
 
         except FileNotFoundError:
             print('Sorry, the db config file is not currently available.*******')
@@ -59,7 +48,6 @@ class DatabaseConnector:
         '''
 
         try:
-            # is this a class or an instance method? (might want to make this a class method later)
             database_credentials = self.read_db_creds()
             # destructure dictionary values
             RDS_HOST, RDS_PASSWORD, RDS_USER, RDS_DATABASE, RDS_PORT = database_credentials.values()
@@ -76,19 +64,7 @@ class DatabaseConnector:
         with engine.connect() as conn:
             inspector = inspect(engine)
             table_names = inspector.get_table_names()
-            # print('Table name: ', table_names)
             return table_names
-
-        # engine.execution_options(isolation_level='AUTOCOMMIT').connect()
-        # from sqlalchemy import inspect
-        # inspector = inspect(engine)
-        # inspector.get_table_names()
-
-        # from sqlalchemy import text
-        # with engine.connect() as connection:
-        #     result = connection.execute(text("SELECT * FROM actor"))
-        #     for row in result:
-        #         print(row)
 
     def upload_to_db(self, df, table_name):
         '''
@@ -96,19 +72,5 @@ class DatabaseConnector:
         '''
 
         with self.engine.connect() as connection:
-            # result = connection.execute(
-            #     text("SELECT * FROM information_schema.schemata"))
-            # for row in result:
-            #     print(row)
-
             df.to_sql(table_name, self.engine,
                       if_exists='replace', index=False)
-
-
-#######
-# Testing
-#######
-# a = DatabaseConnector()
-# # a.read_db_creds()
-# # a.init_db_engine()
-# a.list_db_tables()

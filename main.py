@@ -16,8 +16,9 @@ print(table_list)
 
 # Use the read_rds_table method to extract the table containing user data and return a pandas DataFrame.
 df = de.read_rds_table(dc.init_db_engine(), table_list[1])
+# strangely we don't need to return this. It just keeps it in memory.
 clean.clean_user_data(df)
-dc.upload_to_db(df, 'dim_users')  # for testing datacleaning
+dc.upload_to_db(df, 'dim_users')
 
 # Task 4
 pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
@@ -27,12 +28,13 @@ dc.upload_to_db(pdf_df, 'dim_card_details')
 
 # Task 5
 # should probably put this in a file somewhere
+# should read this from a file
 api_dict = {"x-api-key": "yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX"}
 a = de.list_number_stores(
     "https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores", api_dict)
 
 stores_df = de.retrieve_stores_data(
-    'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details')
+    'https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/store_details', api_dict)
 
 # stored the df temporarily so we can clean the data without having to wait
 # stores_df = pd.read_csv('../temp/stores.csv')
@@ -56,6 +58,6 @@ order_df = clean.clean_orders_table(order_df)
 dc.upload_to_db(order_df, 'orders_table')
 
 # Task 8
-date_events_df = de.extract_date_events()
+date_events_df = de.extract_date_events(api_dict)
 date_events_df = clean.clean_date_events(date_events_df)
 dc.upload_to_db(date_events_df, 'dim_date_times')
