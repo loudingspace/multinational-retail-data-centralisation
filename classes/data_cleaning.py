@@ -14,6 +14,90 @@ class DataCleaning:
     This will have methods to clean data from each of the data sources
     '''
 
+    def clean_date_events(self, df):
+
+        # remove nulls
+
+        df.info()
+
+        df = df[df['timestamp'] != 'NULL']
+
+        # remove garbage
+
+        regex = '\d{2}:\d{2}:\d{2}'
+        mask = df.timestamp.str.contains(regex, na=False, regex=True)
+        print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
+        df = df[mask]  # remove garbage values
+        print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
+
+        # ok, so I think we want to create a dateobject from the date values here
+        # https://www.programiz.com/python-programming/datetime#google_vignette
+        # https://www.programiz.com/python-programming/datetime/strftime
+
+        # df['test'] = dt.strptime(
+        #     f"{df['timestamp']} {df['month']} {df['year']} {df['day']}", "%H:%M:%S %m %Y %d")
+
+        # TODO: need to use .apply
+
+        # df['test'] = f"{df['timestamp']} {df['month']} {df['year']} {df['day']}".apply(
+        #     lambda x: x)
+
+        # let's see if converting to string type might help us here
+        df.timestamp = df.timestamp.astype('string')
+
+        # For some reason I can't do this is one go
+        # df['hour'] = df.timestamp.str.extract('(\d{2}):\d{2}:\d{2}')
+        # df['minute'] = df.timestamp.str.extract('\d{2}:(\d{2}):\d{2}')
+        # df['second'] = df.timestamp.str.extract('\d{2}:\d{2}:(\d{2})')
+
+        df[['h', 'm', 's']] = df.timestamp.str.extract(
+            '(\d{2}):(\d{2}):(\d{2})')
+
+        # https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html
+        df['date'] = pd.to_datetime({
+            'year': df.year,
+            'month': df.month,
+            'day': df.day,
+            # 'minute': df.timestamp.str.split(':')[0]
+            'hour': df.h,
+            # df.timestamp.str.extract('(\d{2}):\d{2}:\d{2}').to_frame(),
+            'minute': df.m,
+            'second': df.s
+            # 'ms'
+        })
+
+        df.drop(['timestamp', 'month', 'year', 'day',
+                'h', 's', 'm'], axis=1, inplace=True)
+
+        # print('timestamp: ', type(
+        #     df.timestamp.str.extract('(\d{2}):\d{2}:\d{2}')))
+        # print('year ', type(df.year))
+        # # print(df.timestamp.str.extract('\d{2}:(\d{2}):\d{2}'))
+
+        # print(df.time_period.unique())
+
+        df.date_uuid = df.date_uuid.astype('string')
+        df.time_period = df.time_period.astype('string')
+
+        # mask = df.date_uuid.str.contains(
+        #     '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', na=False, regex=True)
+
+        # print(mask)
+        # print('Number of valid date_uuid: ', df.date_uuid[mask].count(
+        # ), '\nNumber of invalid date_uuid: ', df.date_uuid[~mask].count())
+
+        print(df.head())
+        print(df.info())
+
+        # dict_keys(['timestamp', 'month', 'year', 'day', 'time_period', 'date_uuid'])
+
+        # df = pd.read_json(response.json(), orient='index')
+        # df = pd.json_normalize(response.json())
+        # print(df.head())
+        print(df.columns)
+
+        return df
+
     def clean_orders_table(self, df):
         ''' Cleans the orders database stored in the RDS database
 

@@ -43,14 +43,22 @@ class DataExtraction:
         response = requests.get(
             'https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json', headers=header)
 
-        with open("../temp/date_details.json", "w") as f:
-            json.dump(response.json(), f)
+        # with open("../temp/date_details.json", "w") as f:
+        #     json.dump(response.json(), f)
 
         # so it's a dictionary and we need to extract the columns as dictionary key, values, where inside they are of the format index : value
 
-        # df = pd.read_json(response.json(), orient='index')
-        # df = pd.json_normalize(response.json())
-        # print(df.head())
+        date_events_dict = response.json()
+
+        # for column_name in date_events_dict.keys():
+        #     # they are all the same length
+        #     print(column_name, len(date_events_dict[column_name]))
+
+        df = pd.DataFrame.from_dict(
+            date_events_dict, orient='columns', dtype=None, columns=None)  # convert to df using reverse syntax for to_dict(orient='dict, into=dict)
+        # Effective Pandas, Matt Harrison p323
+
+        return df
 
     def read_rds_database(self):
         '''reads in the database from the RDS connection
@@ -237,4 +245,6 @@ order_df = clean.clean_orders_table(order_df)
 dc.upload_to_db(order_df, 'orders_table')
 '''
 
-de.extract_date_events()
+date_events_df = de.extract_date_events()
+date_events_df = clean.clean_date_events(date_events_df)
+dc.upload_to_db(date_events_df, 'dim_date_times')
