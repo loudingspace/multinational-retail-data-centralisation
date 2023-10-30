@@ -1,11 +1,13 @@
-from database_utils import DatabaseConnector
-from data_cleaning import DataCleaning
+from .data_cleaning import DataCleaning
+# need to prefix with a dot to access modules in same directory
+from .database_utils import DatabaseConnector
 from sqlalchemy import text, exc
 import pandas as pd
 import tabula
 import requests
 import boto3
 import json
+import os
 
 
 class DataExtraction:
@@ -17,6 +19,8 @@ class DataExtraction:
     these sources will include CSV files, an API and an S3 bucket.
     '''
 
+    SYSTEMPATH = os.getcwd()
+
     def extract_from_s3(self):
         ''' uses the boto3 package to download and extract the information returning a pandas DataFrame.
 
@@ -27,9 +31,9 @@ class DataExtraction:
 
         s3 = boto3.client('s3')
         s3.download_file('data-handling-public', 'products.csv',
-                         '../temp/products.csv')
+                         self.SYSTEMPATH + '/temp/products.csv')
 
-        df = pd.read_csv('../temp/products.csv', index_col=0)
+        df = pd.read_csv(self.SYSTEMPATH + '/temp/products.csv', index_col=0)
 
         # print(df.info())
         return df
@@ -186,10 +190,14 @@ class DataExtraction:
         return df
 
 
-##### Test #####
+'''
+
 dc = DatabaseConnector()
 de = DataExtraction()
 clean = DataCleaning()
+
+'''
+##### Test #####
 
 
 '''
@@ -244,7 +252,11 @@ print(order_df.info())
 order_df = clean.clean_orders_table(order_df)
 dc.upload_to_db(order_df, 'orders_table')
 '''
+'''
 
+#Task8
 date_events_df = de.extract_date_events()
 date_events_df = clean.clean_date_events(date_events_df)
 dc.upload_to_db(date_events_df, 'dim_date_times')
+
+'''

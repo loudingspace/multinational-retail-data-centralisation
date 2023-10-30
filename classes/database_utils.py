@@ -1,6 +1,7 @@
 import yaml
 from sqlalchemy import create_engine, inspect, exc, text
 import pandas as pd  # not sure if we need this, but it was int he example files
+import os
 
 # I think this should probably be private, at the most protected
 
@@ -11,20 +12,30 @@ class DatabaseConnector:
     '''
     DATABASE_TYPE = 'postgresql'
     DBAPI = 'psycopg2'
+    SYSTEMPATH = os.getcwd()
 
     def __init__(self):
         try:
-            with open('../info/postgresdb_creds.yaml') as file:
+            pathname = self.SYSTEMPATH + '/info/postgresdb_creds.yaml'
+            # print(pathname)
+
+            # need to replace this with pathname
+            with open(pathname) as file:
                 db_creds = yaml.safe_load(file)
+
                 # print(db_creds)
 
+                HOST, USER, PASSWORD, DATABASE, PORT = db_creds.values()
+
+            self.engine = create_engine(
+                f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
+
+            # with open(pathname) as file:
+            #     db_creds = yaml.safe_load(file)
+            #     print(db_creds)
+
         except FileNotFoundError:
-            print('Sorry, the db config file is not currently available.')
-
-        HOST, USER, PASSWORD, DATABASE, PORT = db_creds.values()
-
-        self.engine = create_engine(
-            f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
+            print('Sorry, the db config file is not currently available.*******')
 
     def read_db_creds(self) -> dict:  # THIS SHOULD BE PRIVATE
         '''read the credentials yaml file and return a dictionary of the credentials
@@ -33,7 +44,7 @@ class DatabaseConnector:
         dict: dictionary version of the yaml file
         '''
         try:
-            with open('../info/db_creds.yaml') as file:
+            with open(self.SYSTEMPATH + '/info/db_creds.yaml') as file:
                 db_creds = yaml.safe_load(file)
             return db_creds
 
