@@ -71,6 +71,10 @@ class DatabaseConnector:
         Takes a dataframe and converts this to SQL and then uploads it to the database with the table_name
         '''
 
-        with self.engine.connect() as connection:
-            df.to_sql(table_name, self.engine,
-                      if_exists='replace', index=False)
+        try:
+            with self.engine.connect() as connection:
+                print('Creating ', table_name)
+                df.to_sql(table_name, self.engine,
+                          if_exists='replace', index=False)
+        except Exception as e:
+            print('Something has gone wrong: ', e)

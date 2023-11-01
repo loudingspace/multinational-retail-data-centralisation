@@ -7,9 +7,8 @@ import math
 
 # TODO: the clean_user_data() needs refactoring big time. But we will leave this to later as want to get the functionality there first, then refactor when things are operational
 # TODO: don't need to return a df in clean_card_date
-
-
 # TODO: remember to change the postgresdb_creds back after experimentation
+
 
 class DataCleaning:
     '''
@@ -17,9 +16,6 @@ class DataCleaning:
     '''
 
     def clean_date_events(self, df):
-
-        # remove nulls
-
         df.info()
 
         df = df[df['timestamp'] != 'NULL']
@@ -31,11 +27,10 @@ class DataCleaning:
         df = df[mask]  # remove garbage values
         print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
 
+        # want to consolidate the date info into one object.
         df.timestamp = df.timestamp.astype('string')
-
         df[['h', 'm', 's']] = df.timestamp.str.extract(
             '(\d{2}):(\d{2}):(\d{2})')
-
         # https://pandas.pydata.org/docs/reference/api/pandas.to_datetime.html
         df['date'] = pd.to_datetime({
             'year': df.year,
@@ -54,23 +49,6 @@ class DataCleaning:
         df.date_uuid = df.date_uuid.astype('string')
         df.time_period = df.time_period.astype('string')
 
-        # mask = df.date_uuid.str.contains(
-        #     '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', na=False, regex=True)
-
-        # print(mask)
-        # print('Number of valid date_uuid: ', df.date_uuid[mask].count(
-        # ), '\nNumber of invalid date_uuid: ', df.date_uuid[~mask].count())
-
-        print(df.head())
-        print(df.info())
-
-        # dict_keys(['timestamp', 'month', 'year', 'day', 'time_period', 'date_uuid'])
-
-        # df = pd.read_json(response.json(), orient='index')
-        # df = pd.json_normalize(response.json())
-        # print(df.head())
-        print(df.columns)
-
         return df
 
     def clean_orders_table(self, df):
@@ -81,58 +59,21 @@ class DataCleaning:
         Returns: df
         '''
 
-        # You should remove the columns, first_name, last_name and 1 to have the table in the correct form before uploading to the database.
-        # You will see that the orders data contains column headers which are the same in other tables.
-        df.info()
         df.drop(['first_name', 'last_name', '1'], axis=1, inplace=True)
-
-        df.info()
-
-        # remove nulls
         df = df[df.level_0 != 'NULL']
-
-        # print(df.isna().sum())
-        # print(df.isna().count())
-        # print(df.head())
 
         def clean_explore(regex, column):
             mask = df[column].str.contains(
                 regex, regex=True, na=False)
             print(column, " : ", df[column][~mask].count(), df[column][~mask])
 
-        #  0   level_0           120123 non-null  int64
-        #  1   index             120123 non-null  int64
-        #  2   date_uuid         120123 non-null  object ✅
-        #  3   user_uuid         120123 non-null  object ✅
-        #  4   card_number       120123 non-null  int64 ✅ (they are all int64 anyways - should convert other credit card columns to this format)
-        #  5   store_code        120123 non-null  object ✅
-        #  6   product_code      120123 non-null  object ✅
-        #  7   product_quantity  120123 non-null  int64 ✅
-
-        # mask = df.user_uuid.str.contains(
-        #     '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
-        # print('user_uuid ', df.user_uuid[~mask].count(), df.user_uuid[~mask])
-
-        # clean_explore('[a-zA-Z]+', 'card_number')
-        # clean_explore('^[A-Z]+-\w{8}$', 'store_code')
-        # clean_explore('\w{2}-\d+\w{1}', 'product_code')
-        # print(df.product_quantity.min(), df.product_quantity.max())
-        # print(df.level_0.min(), df.level_0.max())
-        # print(df.index.min(), df.index.max())
-
         #  i've been dropping the indexes, and as it appear index and level_0 are the same, I'm going to drop these too
         df.drop(columns=['index', 'level_0'], inplace=True)
 
-        # df.head()
-        # df.info()
-
+        # i'm not sure I need to return this as it references the same object in memory I then use later...
         return df
 
     def process_date(df, column):
-
-        # print('\n**** BEFORE ANY PROCESSING **** \n')
-        # df.info()
-        # print(df.head())
 
         df.reset_index(inplace=True)  # THINK THE INDEX IS ISSUE
 
@@ -142,18 +83,12 @@ class DataCleaning:
         MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'  # October 2012 21
 
         regular_dates = df[column].str.contains(date_regex, na=False)
-        # print(df[column][~regular_dates])
 
         for index, unusual_date in df[column][~regular_dates].items():
             # 1968 October 16 \d{4}\s[a-zA-Z]+\s\d{2}
-
-            # print(unusual_date, type(unusual_date))
-
             if isinstance(unusual_date, float):
-                # print('this identifies ', unusual_date, ' as a float')
-                continue  # this is get around a float exception for the regular expression
+                continue
 
-            print(index, 'Carrying on after type check')
             if re.search(YYYYMONTHDATE, unusual_date):
                 formatted_date = dt.strptime(
                     unusual_date, '%Y %B %d')
@@ -171,36 +106,7 @@ class DataCleaning:
             else:
                 formatted_date = np.nan
 
-            # i suspect this is this index playing difficulties here
             df.loc[[index], [column]] = formatted_date
-            # print("THIS IS WHAT IS HAPPENING WHEN WE CHANGE THE VALUES: ", index, column)
-
-        # print(df[column][~regular_dates])
-
-        # it's complaining about floats so we could try to cast it as a string
-
-        # print(df.head())
-        # df.info()
-
-        # don't think i need string conversion anymore
-        # df[column][regular_dates] = df[column][regular_dates].astype('string')
-        # print('-------------- After string conversion')
-        # print(df.head())
-        # df.info()
-
-        '''
-        print('************* DEBUG **************')
-        for date in df[column][regular_dates]:
-            if type(date) != 'str':
-                print(date, type(date))
-
-        print('All the null values', print(
-            df[column][regular_dates].isnull().count()))
-        print(df[column][regular_dates].isnull())
-
-        ##########################
-        
-        '''
 
         # i changed orded of mask and column for the following 2 lines:
         df[regular_dates][column] = df[regular_dates][column].apply(
@@ -222,52 +128,73 @@ class DataCleaning:
         Returns: dataframe
         '''
 
-        # check for null values
-
-        print(df.isna().values.sum())
-        # NULL appears to appear in all rows when it does appear
+        # print(df.isna().values.sum())
         df = df[df.opening_date != 'NULL']
 
-        print('NULLS... ', df[df.opening_date == 'NULL'])
+        # print(df.info())
+        # print(df.head())
+
+        # print(df.lat[~df.lat.isna()])
 
         # clean up addresses by replacing \n for ', '
-
         df.address = df.address.str.replace('\n', ', ')
         df.address = df.address.astype('string')
 
         # longitude - replace None with null values
 
         # print(df.longitude.unique())  # these need to be NN.NN+
-        mask = df.longitude.str.contains('\d{2}\.\d{1}', na=False)
+        # I think store code is a better on for dispensing of garbage values, as we get rid of a real value here
+        # mask = df.longitude.str.contains('\d{2}\.\d{1}', na=False)
+        # print(df[~mask])
+
+        mask = df.store_code.str.contains(
+            '[A-Z]+-\w{7}\w+', na=False, regex=True)
+        # print(df[~mask])
+
         df = df[mask]  # is this where we dispense of the garbage values?
-        # print('+++++++++++++++++++', df.longitude.unique())
+        df.reset_index(inplace=True)
+
+        # print(df[~mask])
+
+        '''
+        # let's not convert these as this might make concatenation easier for the Milestone 3 tasks
         df.longitude = df.longitude.astype('float')
+        df.latitude = df.latitude.astype('float')
+        '''
+        # print(df.info())
+        print(df.head())
+        # mask = df.longitude.str.contains('[N][/][A]', regex=True)
+        # print(mask)
+
+        # this will replace NaN will None I hope
+        df.longitude = df.longitude.where(pd.notnull(df.longitude), None)
+
+        print(df.head())
+
+        # print(df.lat[~df.lat.isna()])
 
         # let's drop the column Lat as it is empty
         df.drop(['lat'], axis=1, inplace=True)
 
         # check any abnormalities with locality
-
         df.locality = df.locality.astype('string')
 
         # check store type
         # print(df.store_type.unique()) # seems ok, there are 4 categories
 
         # check for any abnormalities with store code
-
         column = 'store_code'  # this should be a function as I use this a lot
         regex = '^[A-Z]+-\w{8}$'
         mask = df[column].str.contains(regex, na=False)
-        # print(mask.unique())
-        # print(~mask)
-        print('The number of non-compliant store codes is ',
-              len(df[column][~mask]))
+
+        # print('The number of non-compliant store codes is ',
+        #      len(df[column][~mask]))
         df.store_code = df.store_code.astype('string')
 
         # make sure staff numbers are all numbers - they aren't!!
         # df.staff_numbers = df.staff_numbers.astype('int16')
         # these need to be NN.NN+
-        print('STAFF NUMBERS', df.staff_numbers.unique())
+        # print('STAFF NUMBERS', df.staff_numbers.unique())
         # mask = df.staff_numbers.str.contains('\d+', na=False)
         # print(df[mask])
         # df = df[mask]
@@ -280,25 +207,13 @@ class DataCleaning:
         DataCleaning.process_date(df, 'opening_date')
 
         df.store_type = df.store_type.astype('string')
-        df.latitude = df.latitude.astype('float')
 
         # print(df.country_code.unique()) - there are three country codes
         # print(df.continent.unique()) ## there is a mistake in the continents with the addition of 'ee'. Let's replace that
 
         df.country_code = df.country_code.astype('string')
-
-        # print(df.continent.unique())
         df.continent = df.continent.str.replace('ee', '')
-        # print(df.continent.unique())
         df.continent = df.continent.astype('string')
-
-        ''''
-        The dates tell us which are the lines with gobbledegook in them, so we want to drop those rows.
-
-        Lat seems meaningless - does it have any meaningful values?
-        '''
-
-        df.info()
 
         df.drop(columns=['index'], inplace=True)
         return df
@@ -306,43 +221,14 @@ class DataCleaning:
     def clean_card_data(self, df):
         print(df.iloc[50:70, 0:1])
 
-        # for col in df.columns:
-        #     print("Column: ", col)
-
-        # new_index = pd.Index([x for x in range(0, len(df))])
-        # df.set_index(new_index)
-        # print(df.iloc[50:70, 0:1])
-
-        # we want to reconstruct the index
-        # NOT SURE HOW TO DO THIS
-
-        # remove null values
-
-        # print('The length of the dataframe  is ', len(df))
-        # print(df.info())
-
         df = df[df.card_number != 'NULL']  # remove null values
-
-        # print('The length of the dataframe AFTER NULL REMOVAL is ', len(df))
-        # print(df.info())
-
-        # check date_payment_confirmed format
-
         df = DataCleaning.process_date(df, 'date_payment_confirmed')
-        # df = DataCleaning.clean_date(df, 'date_payment_confirmed')
-
-        # check expiry date format - want to convert this to a date format too
 
         column = 'expiry_date'
         date_regex = '^\d{2}\/\d{2}$'
         regular_dates = df[column].str.contains(date_regex)
-        # print(df[column])
-        # print(df[column][~regular_dates])
-        # irregular dates are a strange code. We want to remove all the rows with these in them
+
         df[column] = df[column][regular_dates]
-        # let's check these have been deleted
-        # print(df[column][~regular_dates])
-        # print(df[column])
 
         # Try using .loc[row_indexer,col_indexer] = value instead
         df.drop(df[column][~regular_dates].index, inplace=True)
@@ -351,12 +237,6 @@ class DataCleaning:
 
         df[column] = pd.to_datetime(
             df[column], format='%d/%y', errors='ignore')
-
-        # df = df.drop(df[column][~regular_dates], axis=1) THIS DOESN'T WORK
-        # print(df[column])
-
-        df.info()
-        print(df.head())
 
         # check consistency in card_provider
 
@@ -370,20 +250,11 @@ class DataCleaning:
         number_regex = '[^0-9]'
         mask = df['card_number'].str.contains(
             number_regex, regex=True, na=False)
-        # checked to see if the length of the numbers are correct and they seem to be.
-        # print(mask)
-        # print(df.card_number[mask])
-        # print(df.info(), df.head())
+
         df.card_number[mask] = df.card_number[mask].str.replace(
             '\?', '', regex=True)  # need to escape a ?
-        # print(df.card_number[mask])
-
-        # print(df.info(), df.head(100))
-
-        # do we need to drop the index column?
 
         df.drop(columns=['index'], inplace=True)
-
         return df
 
     def convert_product_weight(self, df):
@@ -394,47 +265,7 @@ class DataCleaning:
         Returns: dataframe
         '''
 
-        '''
-        print(df.weight)
-        regex = '[a-zA-Z]+'
-        all_weights = df.weight.str.findall(regex)
-
-        # print(df.weight[df.weight.str.contains('x', na=False)])
-        print(df.weight[df.weight.str.contains('nan', na=False)])
-        print(df.weight[df.weight.str.contains(
-            '[0-9]*[A-Z]+\d*[A-Z]*', na=False, regex=True)])
-        print(df.weight.isna().sum())
-        
-        '''
-
-        # print(all_weights.explode().unique()) ['kg' 'g' nan 'x' 'GO' 'NZ' 'JTL' 'Z' 'ZTDGUZVU' 'MX' 'RYSHX' 'ml' 'oz']
-        # I am hypothesising that all upper case letters are junk
-        # This leaves: kg, g, ml, oz. I am not sure 'x'
-        # It is of the form  12 x 100g --> these are all in grams, so we can convert all of these to kg from grams
-        #  only one case of ounces, oz
-        # need to count nan -> there are 4
-
-        # if we have 8g x 8, we need to do the calculation first and then return value divided by 1000
-        # regex = '\d+\s\x\s\d+g'
-        # calculation_regex = re.compile(r'(\d+)\s\\x\s(\d+)g')
-
-        # for w in df.weight:
-        #     # print(w)
-        #     if not math.isnan(w):
-        #         reg = calculation_regex.search(w)
-        #         if reg:
-        #             print('\t\t', reg.group(1), reg.group(2))
-
-        # if grams, return the value divided by 1000
-        # if df.weight.str.contains('g'):
-        #     pass
-        # if value is in ml, we divide by 1000
-
-        # shall we do it by masks?
-
-        # TODO: refactor this so it is one formula
-
-        def process_product_weight(regex, lambda_formula):
+        def process_product_weight(regex, lambda_formula):  # internal function
             mask = df['weight'].str.contains(
                 regex, regex=True, na=False)
             df.weight[mask] = df['weight'][mask].apply(lambda_formula)
@@ -443,8 +274,6 @@ class DataCleaning:
         # kg
         process_product_weight(
             '(\d+)[k][g]', lambda_formula=lambda x: x.split('kg')[0])
-        # print(df[df['weight'].str.contains(
-        #     '(\d+)[k][g]', regex=True, na=False)]['weight'])
 
         # ml
         process_product_weight(
@@ -463,60 +292,11 @@ class DataCleaning:
             '\d+[o][z]', lambda x: (float(x.split('oz')[0]) * 0.02834952))
 
         # finally, the junk. Let's convert those to nan, then convert whole lot to float
-
         process_product_weight('[A-Z]', lambda x: np.nan)
 
         df.weight = df.weight.astype(float)
-        # df.info()
-        # print(df.head(30))
 
         return df
-
-        # TODO: i would like to do this using regular expression grouping but I can't get this to work
-
-        '''
-        
-        kg_regex = '(\d+)[k][g]'
-        mask = df['weight'].str.contains(
-            kg_regex, regex=True, na=False)
-        # df[mask]['weight'] = df[mask]['weight'].apply(
-        #    lambda x: x.split('kg')[0])
-        df.weight[mask] = df['weight'][mask].apply(  # so just by changing the order, putting the mask at the end this can help with these problems https://realpython.com/pandas-settingwithcopywarning/
-            lambda x: x.split('kg')[0])
-        # df.loc(df['weight'].str.contains(kg_regex, regex=True, na=False), 'weight') = df.loc(df['weight'].str.contains(
-        #     kg_regex, regex=True, na=False), 'weight').apply(
-        #     lambda x: x.split('kg')[0])
-        print(df[mask]['weight'])
-
-        ml_regex = '(\d+)[m][l]'
-        mask = df['weight'].str.contains(
-            ml_regex, regex=True, na=False)
-        df.weight[mask] = df['weight'][mask].apply(
-            lambda x: float(x.split('ml')[0]) / 1000)
-        print(df[mask]['weight'])
-
-        
-        x_g_regex = '\d+\s[x]\s\d+[g]'
-        mask = df['weight'].str.contains(
-            x_g_regex, regex=True, na=False)
-        df.weight[mask] = df['weight'][mask].apply(
-            lambda x: float(float(x.split(' x ')[0]) * float(x.split(' x ')[1].split('g')[0])) / 1000)
-        print(df[mask]['weight'])
-        '''
-
-        # def process_product_weight(regex, lambda_formula):
-        #     mask = df['weight'].str.contains(
-        #         regex, regex=True, na=False)
-        #     df.weight[mask] = df['weight'][mask].apply(lambda_formula
-        #     )
-
-        # for w in df.weight:
-        #     # so the case of the 2 x 4 is the exception, so we can deal with that first
-        #     print(type(w), w)
-        #     regex = '\d+\s\\x\s\d+g'
-        #     if w.contains(regex, regex=True):
-        #         numbers = w.split(' x ')
-        #         print(numbers)
 
     def clean_products_data(self, df):
         '''Clean remaining columns of products df
@@ -547,64 +327,14 @@ class DataCleaning:
 
         regex = '[£]\d+.\d+'
         mask = df.product_price.str.contains(regex, regex=True, na=False)
-        # print(len(df))
         df = df[mask]  # this drops the garbage data rows
-        # print(len(df))
+
         df.product_price = df.product_price.apply(
             lambda x: float(x.split('£')[1]))
-        # df.product_price = df.product_price.astype(float)
-        # the currency representation is a bit odd in the database - 7 is not 7.00.
 
-        ''''
-        mask = df['weight'].str.contains(
-                regex, regex=True, na=False)
-            df.weight[mask] = df['weight'][mask].apply(lambda_formula)
-        '''
-
-        # date_added 1704
         df = DataCleaning.process_date(df, 'date_added')
-        '''
-        # df.info()
-        # print(df.head())
-        # print(df.loc[[306]])
-        
-        '''
-        # weight 386 DONE
-
-        # category 7
-
-        # print('UNIQUE CATEORIES', df.category.unique(), df.category.nunique())
         df.category = df.category.astype('string')
-
-        # EAN 1849 -- let's check this for any letters as they seem to be numbers only
-
-        # print('EAN stuff now:',
-        #     df.EAN[df.EAN.str.contains('^[1]', regex=True)])
-        # not sure what to do with EANs - going to leave as is for the time being, as not clear if they need to be a number
-
-        # uuid 1849
-
-        # these seem to be 36 letters long and conform to a format of \w{8}-\w{4}-\w{4}-\w{12}
-        # print(df.uuid.unique())
-        # mask = df.uuid.str.contains(
-        #    '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
-        # print('UUID ', df.uuid[~mask].count(), df.uuid[mask])
-        # uuid appear to be regular
-
-        # removed 2
-        # print(df.removed.unique())
         df.removed = df.removed.astype('string')
-
-        # product_code 1849
-        # print(df.product_code)
-
-        # mask = df.product_code.str.contains(
-        #     '\w{2}-\d{7}\w{1}', regex=True, na=False)
-        # print('Product Code ',
-        #       df.product_code[~mask].count(), '\n', df.product_code[~mask]) # these appear to be not concerning
-
-        print(df.info())
-        print(df.head())
 
         df.drop(columns=['index'], inplace=True)
         return df
@@ -622,27 +352,13 @@ class DataCleaning:
         rows filled with the wrong information.
         '''
 
+        # TODO use process_date in this method
+
         for column in df.columns:
             index = df[column][df[column] == 'NULL'].index
 
         for row in index:
             df.drop(row, inplace=True)  # should replace this with df = df[df]
-
-        # df.info()
-
-        # it looks like they are.
-
-        # check for dates
-        # date_of_birth, join_date
-        # print(df.date_of_birth[len(df.date_of_birth) > 10])
-        # mask = (df.date_of_birth.str.len() > 10) & (
-        #   df.date_of_birth[0].isdigit())
-        # mask2 = (df.date_of_birth.str.len() > 10) & (
-        #     df['date_of_birth'].str[0].str.isdigit())  # note you need to index the string and then use str again to use isdigit()
-
-        # print(df.head())
-
-        # --- correctly type the values
 
         df.first_name = df.first_name.astype('string')
         df.last_name = df.last_name.astype('string')
@@ -653,26 +369,24 @@ class DataCleaning:
         df.country = df.country.astype('string')
         df.country_code = df.country_code.astype('string')
 
-        #################################
+        # replace country code as GGB which should be GB
+        df.country_code.replace(['GGB'], 'GB', inplace=True)
 
-        '''
-        valid_date_mask = df.date_of_birth.str.findall(
-            '\d{4}-\d{2}-\d{2}')  # these should be all the valid dates
-        '''
+        mask = df['country_code'].isin(['GB', 'US', 'DE'])
+        # df = df[mask]  # should get rid of the garbage
 
-        # print(df.address)
+        # this removes all garbage values as they are consistent across columns
+        df = df[mask]
 
-        # print('!!!!!!!! Before date manipulation\n')
-        # print(df.info())
-
-        # df['just_date'] = df['dates'].dt.date   should keep just date part
-
-        # so first of all we need to identify all the columns that don't adhere to the standard format of YYYY-MM-DD
+        print(df[~mask])
+        print(df.iloc[750:755])
 
         date_regex = '^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$'
         YYYYMONTHDATE = '\d{4}\s[a-zA-Z]+\s\d{2}'
         YYYYMMDD = '\d{4}\/\d{2}\/\d{2}'
         MONTHYEARDATE = '[a-zA-Z]+\s\d{4}\s\d{2}'
+
+        # TODO: refactor all of the date stuff to use the
 
         # join_date
 
@@ -761,6 +475,8 @@ class DataCleaning:
 
         df.drop(columns=['index'], inplace=True)
 
+        return df
+
         '''
         
         TODO: Phone Cleaning
@@ -772,29 +488,3 @@ class DataCleaning:
         # df.Phone = df.Phone.astype('string')
         
         '''
-
-        '''
-
-        # NON VALID DATES
-
-        # so there seem to be 16 dates that are in a non-standard format. Let's try to get these to conform
-        # https://docs.python.org/3/library/datetime.html#datetime.date
-
-        # 360       1968 October 16  Year Month DD      1  %Y %B #d
-        # 1629      January 1951 27  Month Year DD      2
-        # 1996     November 1958 11  Month Year DD      2  %B %Y #d
-        # 3066      1946 October 18  Year Month DD      1
-        # 4205     1979 February 01  Year Month DD      1
-        # 5350         June 1943 28  Month Year DD      2
-        # 5423     November 1963 06  Month Year DD      2
-        # 6108     February 2005 05  Month Year DD      2
-        # 6221         July 1966 08  Month Year DD      2
-        # 7259      1948 October 24  Year Month DD      1
-        # 8117     December 1946 09  Month Year DD      2
-        # 9934      2005 January 27  Year Month DD      1
-        # 10245        July 1961 14  Month Year DD      2
-        # 11203        July 1939 16  Month Year DD      2
-        # 13045     1951 January 14  Year Month DD      1
-        # 14546         May 1996 25  Month Year DD      2
-
-      '''

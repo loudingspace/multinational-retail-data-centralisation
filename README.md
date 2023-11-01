@@ -26,6 +26,26 @@ DatabaseConnector.init_db_engine() reads the returned dictionary from read_db_cr
 This engine is then used in the list_db_tables method which returns the names of tables that are stored in the RDS database.
 DatabaseConnector.read_rds_table() extracts a dataframe from an RDS database. We use this to return a pandas dataframe of the user data.
 DataCleaning.clean_user_data() performs cleaning of the user data. This includes looking for NULL values, making dates datetime64 objects, removing garbage values. The procedure for this was achieved after careful sifting of the information in the tables, including creating temporary functions to return unique values in a column, to mask regular columns such as dates with a regular expression to look for values that did not conform to the format, and creating a data processing method which returns a cleaned date column. This was then used in subsequent tasks.
+
+For example, using a mask we discovered the following non-standard dates:
+
+        # 360       1968 October 16  Year Month DD      1  %Y %B #d
+        # 1629      January 1951 27  Month Year DD      2
+        # 1996     November 1958 11  Month Year DD      2  %B %Y #d
+        # 3066      1946 October 18  Year Month DD      1
+        # 4205     1979 February 01  Year Month DD      1
+        # 5350         June 1943 28  Month Year DD      2
+        # 5423     November 1963 06  Month Year DD      2
+        # 6108     February 2005 05  Month Year DD      2
+        # 6221         July 1966 08  Month Year DD      2
+        # 7259      1948 October 24  Year Month DD      1
+        # 8117     December 1946 09  Month Year DD      2
+        # 9934      2005 January 27  Year Month DD      1
+        # 10245        July 1961 14  Month Year DD      2
+        # 11203        July 1939 16  Month Year DD      2
+        # 13045     1951 January 14  Year Month DD      1
+        # 14546         May 1996 25  Month Year DD      2
+
 DatabaseConnector.upload_to_db(dataframe, table_name) takes in a dataframe and a table name and creates a table in the local postgreSQL database as 'dim_users'.
 
 # Task 4
@@ -56,6 +76,35 @@ This is then uploaded as 'dim_products'.
 
 We retrieve the product orders database by using DatabaseConnect.read_rds_table() after obtaining the right file name from DatabaseConnect.list_db_tables, and return a dataframe.
 DataCleaning.clean_orders_data() removes columns that are not necessary and performs other cleaning on the dataframe. This is then uploaded to the database as 'orders_table'.
+
+A temporary function, clean_explore used a regex we defined to sift a column. We went through each column one by one
+
+    def clean_explore(regex, column):
+            mask = df[column].str.contains(
+                regex, regex=True, na=False)
+            print(column, " : ", df[column][~mask].count(), df[column][~mask])
+
+         We would try a df.info() to see what we needed to apply the code to:
+
+         0   level_0            120123 non-null  int64
+         1   index             120123 non-null  int64
+         2   date_uuid         120123 non-null  object ✅
+         3   user_uuid         120123 non-null  object ✅
+         4   card_number       120123 non-null  int64 ✅ (they are all int64 anyways - should convert other credit card columns to this format)
+         5   store_code        120123 non-null  object ✅
+         6   product_code      120123 non-null  object ✅
+         7   product_quantity  120123 non-null  int64 ✅
+
+     mask = df.user_uuid.str.contains(
+         '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
+    print('user_uuid ', df.user_uuid[~mask].count(), df.user_uuid[~mask])
+
+    clean_explore('[a-zA-Z]+', 'card_number')
+    clean_explore('^[A-Z]+-\w{8}$', 'store_code')
+    clean_explore('\w{2}-\d+\w{1}', 'product_code')
+    print(df.product_quantity.min(), df.product_quantity.max())
+    print(df.level_0.min(), df.level_0.max())
+    print(df.index.min(), df.index.max())
 
 # Task 8
 

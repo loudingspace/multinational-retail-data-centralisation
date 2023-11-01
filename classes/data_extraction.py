@@ -136,6 +136,8 @@ class DataExtraction:
             endpoint = f'{stores_endpoint}/{store_number}'
             response = requests.get(endpoint, headers=header).json()
 
+            print(response['lat'])
+
             if store_number == 0:
                 print('creating dataframe')
                 index = response.pop('index')
