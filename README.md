@@ -116,35 +116,35 @@ This is where a star-based schema of the database was created. This involved the
 
 We used the following code:
 
-> SELECT max(length(CAST(card_number AS VARCHAR))) FROM orders_table;
+    SELECT max(length(CAST(card_number AS VARCHAR))) FROM orders_table;
 
 This ensures that the column is considered to be a string, which is essential for the length() function to work. A variant of this was used for all calculations.
 
 To alter the datatypes we used the following:
 
-> ALTER TABLE orders_table
-> ALTER COLUMN date_uuid TYPE UUID USING date_uuid::UUID
+     ALTER TABLE orders_table
+     ALTER COLUMN date_uuid TYPE UUID USING date_uuid::UUID
 
 In the case of certain types we needed to make the case explicit with USING, such as dates, floats and uuids.
 
 In order to make a column nullable, we used the following:
 
-> ALTER COLUMN store_type DROP NOT NULL
+     ALTER COLUMN store_type DROP NOT NULL
 
 To create a new column based on values from other columns was a two pronged affair. First we needed to create the column and then we used a CASE statement that would feed into the SET argument of UPDATE, thus:
 
-> UPDATE dim_products
-> SET weight_class =
-> CASE
-> WHEN
-> weight < 2 THEN 'Light'
-> WHEN  
->  weight >= 2 AND weight < 40 THEN 'Mid_Sized'
-> WHEN  
->  weight >= 40 AND weight < 140 THEN 'Heavy'
-> WHEN
-> weight > 120 THEN 'Long'
-> END;
+     UPDATE dim_products
+     SET weight_class =
+        CASE
+            WHEN
+                weight < 2 THEN 'Light'
+            WHEN
+                weight >= 2 AND weight < 40 THEN 'Mid_Sized'
+            WHEN
+                weight >= 40 AND weight < 140 THEN 'Heavy'
+            WHEN
+                weight > 120 THEN 'Long'
+        END;
 
 Initially I had thought we could insert this using INSERT, but this appeared to cause issues with the database and often resulted in crashing. Not sure why.
 
@@ -152,10 +152,10 @@ During the process of ensuring the integrity of the new datatypes, I realised th
 
 To create a BOOL type, we needed to ensure that the table included True or False values instead of the strings. A silly but useful issue was that there was a spelling mistake in one of the strings, which I had not picked up on, and which caused much concern until I realised that I had been looking for the incorrect string. A useful reminder to actually cut and paste the actual string rather than assuming it to be what you think it is.
 
-> UPDATE
-> dim_products
-> SET
-> removed = REPLACE(removed, 'Still_avaliable', 'True');
+    UPDATE
+        dim_products
+    SET
+        removed = REPLACE(removed, 'Still_avaliable', 'True');
 
 Note that it is "avaliable" not "available".
 
@@ -163,18 +163,18 @@ TODO: In Milestone 2, we created a date field for the dim_date_times. I now real
 
 We then created primary keys in each of the tables that are references in orders_table, namely:
 
-> ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
-> ALTER TABLE dim_users ADD PRIMARY KEY (user_uuid);
-> ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
-> ALTER TABLE dim_stores_details ADD PRIMARY KEY (store_code);
-> ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
+ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
+ALTER TABLE dim_users ADD PRIMARY KEY (user_uuid);
+ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
+ALTER TABLE dim_stores_details ADD PRIMARY KEY (store_code);
+ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
 
 And then ensured these were foreign keys in their respective tables. This is an example of the template we used:
 
-> ALTER TABLE orders_table
-> ADD CONSTRAINT fk_orders_table_dim_date_times
-> FOREIGN KEY (date_uuid)
-> REFERENCES dim_date_times(date_uuid);
+    ALTER TABLE orders_table
+    ADD CONSTRAINT fk_orders_table_dim_date_times
+    FOREIGN KEY (date_uuid)
+    REFERENCES dim_date_times(date_uuid);
 
 We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
 
