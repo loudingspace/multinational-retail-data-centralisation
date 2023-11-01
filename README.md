@@ -110,11 +110,81 @@ A temporary function, clean_explore used a regex we defined to sift a column. We
 
 The data events table was obtained by downloading a json file from a public S3 bucket with DataExtraction.extract_date_events(). We then clean this by creating a new column just called date that amalgamates the other columns in the table. We then return this for uploading to the local database as 'dim_date_times'.
 
+# Milestone 3
+
+This is where a star-based schema of the database was created. This involved the casting of types, and the creation of limited VARCHARs.
+
+We used the following code:
+
+> SELECT max(length(CAST(card_number AS VARCHAR))) FROM orders_table;
+
+This ensures that the column is considered to be a string, which is essential for the length() function to work. A variant of this was used for all calculations.
+
+To alter the datatypes we used the following:
+
+> ALTER TABLE orders_table
+> ALTER COLUMN date_uuid TYPE UUID USING date_uuid::UUID
+
+In the case of certain types we needed to make the case explicit with USING, such as dates, floats and uuids.
+
+In order to make a column nullable, we used the following:
+
+> ALTER COLUMN store_type DROP NOT NULL
+
+To create a new column based on values from other columns was a two pronged affair. First we needed to create the column and then we used a CASE statement that would feed into the SET argument of UPDATE, thus:
+
+> UPDATE dim_products
+> SET weight_class =
+> CASE
+> WHEN
+> weight < 2 THEN 'Light'
+> WHEN  
+>  weight >= 2 AND weight < 40 THEN 'Mid_Sized'
+> WHEN  
+>  weight >= 40 AND weight < 140 THEN 'Heavy'
+> WHEN
+> weight > 120 THEN 'Long'
+> END;
+
+Initially I had thought we could insert this using INSERT, but this appeared to cause issues with the database and often resulted in crashing. Not sure why.
+
+During the process of ensuring the integrity of the new datatypes, I realised there were some problems with my cleaning code from Milestone 2. We refactored accordingly - this affected the dim_users table.
+
+To create a BOOL type, we needed to ensure that the table included True or False values instead of the strings. A silly but useful issue was that there was a spelling mistake in one of the strings, which I had not picked up on, and which caused much concern until I realised that I had been looking for the incorrect string. A useful reminder to actually cut and paste the actual string rather than assuming it to be what you think it is.
+
+> UPDATE
+> dim_products
+> SET
+> removed = REPLACE(removed, 'Still_avaliable', 'True');
+
+Note that it is "avaliable" not "available".
+
+TODO: In Milestone 2, we created a date field for the dim_date_times. I now realise that this will remove the time information, so we need to revisit this and make sure that a separate time column exists.
+
+We then created primary keys in each of the tables that are references in orders_table, namely:
+
+> ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
+> ALTER TABLE dim_users ADD PRIMARY KEY (user_uuid);
+> ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
+> ALTER TABLE dim_stores_details ADD PRIMARY KEY (store_code);
+> ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
+
+And then ensured these were foreign keys in their respective tables. This is an example of the template we used:
+
+> ALTER TABLE orders_table
+> ADD CONSTRAINT fk_orders_table_dim_date_times
+> FOREIGN KEY (date_uuid)
+> REFERENCES dim_date_times(date_uuid);
+
+We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
+
 # File structure of the project
 
-There are three folders: classes, info and temp and a main.py file to run everything.
+There are four folders: classes, notebooks, info and temp and a main.py file to run everything.
 
-- classes contains: data_cleaning.py - data_extraction.py - database_utils.py -
+- classes contains: data_cleaning.py - data_extraction.py - database_utils.py
+
+- notebooks contains the work for Milestone 3
 
 - info contains .yaml credentials files
 
