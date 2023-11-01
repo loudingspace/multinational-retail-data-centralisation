@@ -163,11 +163,11 @@ TODO: In Milestone 2, we created a date field for the dim_date_times. I now real
 
 We then created primary keys in each of the tables that are references in orders_table, namely:
 
-ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
-ALTER TABLE dim_users ADD PRIMARY KEY (user_uuid);
-ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
-ALTER TABLE dim_stores_details ADD PRIMARY KEY (store_code);
-ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
+    ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
+    ALTER TABLE dim_users ADD PRIMARY KEY (user_uuid);
+    ALTER TABLE dim_card_details ADD PRIMARY KEY (card_number);
+    ALTER TABLE dim_stores_details ADD PRIMARY KEY (store_code);
+    ALTER TABLE dim_products ADD PRIMARY KEY (product_code);
 
 And then ensured these were foreign keys in their respective tables. This is an example of the template we used:
 
