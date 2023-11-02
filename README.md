@@ -69,69 +69,26 @@ We use the DataExtraction class to extract data from different data sources. The
 
 The main.py file creates instances of the DataExtraction and DatabaseConnector classes. We use these with an instantiation of the DataCleaning class to perform the cleaning of the data for uploading to our local postgres database.
 
-init_db_engine() reads the returned dictionary from read_db_creads and returns an sqlalchemy engine.
-This engine is then used in the list_db_tables method which returns the names of tables that are stored in the RDS database.
-DatabaseConnector.read_rds_table() extracts a dataframe from an RDS database. We use this to return a pandas dataframe of the user data.
-DataCleaning.clean_user_data() performs cleaning of the user data. This includes looking for NULL values, making dates datetime64 objects, removing garbage values. The procedure for this was achieved after careful sifting of the information in the tables, including creating temporary functions to return unique values in a column, to mask regular columns such as dates with a regular expression to look for values that did not conform to the format, and creating a data processing method which returns a cleaned date column. This was then used in subsequent tasks.
+The process of cleaning was performed by exploring the data to see where cleaning might need to occur. We began exploration by looking for unique values, which would inform our future explorations. For example:
 
-For example, using a mask we discovered the following non-standard dates:
+    df.COLUMNAME.nunique() # gives the number of unique values
+    df.COLUMNAME.unique() # shows all the unique values
 
-        # 360       1968 October 16  Year Month DD      1  %Y %B #d
-        # 1629      January 1951 27  Month Year DD      2
-        # 1996     November 1958 11  Month Year DD      2  %B %Y #d
-        # 3066      1946 October 18  Year Month DD      1
-        # 4205     1979 February 01  Year Month DD      1
-        # 5350         June 1943 28  Month Year DD      2
-        # 5423     November 1963 06  Month Year DD      2
-        # 6108     February 2005 05  Month Year DD      2
-        # 6221         July 1966 08  Month Year DD      2
-        # 7259      1948 October 24  Year Month DD      1
-        # 8117     December 1946 09  Month Year DD      2
-        # 9934      2005 January 27  Year Month DD      1
-        # 10245        July 1961 14  Month Year DD      2
-        # 11203        July 1939 16  Month Year DD      2
-        # 13045     1951 January 14  Year Month DD      1
-        # 14546         May 1996 25  Month Year DD      2
+Obviously, this varied depending on what kind of data we were approaching. But it would tell us if categorical data was consistent. For example, the 'GB' value in country code had some extra letters which we identified using this sifting process. Or we would identify random letters inserted in numbers. An example of this is how we performed the cleaning for the staff_numbers column in the store details:
 
-DatabaseConnector.upload_to_db(dataframe, table_name) takes in a dataframe and a table name and creates a table in the local postgreSQL database as 'dim_users'.
+    df.staff_numbers = df.staff_numbers.str.replace(
+            '[a-zA-Z]', '', regex=True)
 
-# Task 4
-
-DataExtractor.retrieve_pdf_data(external_link): Using the tabula-py python package, a pdf file was extracted from an external link. A dataframe is returned.
-DataCleaning.clean_card_data(dataframe) cleans the data from the pdf. Again, null values were removed, dates were put into a uniform format and other issues were dealt with. The work on the previous data cleaning task informed this one.
-The data is then uploaded to the local database as 'dim_card_details'.
-
-# Task 5
-
-In this task, we needed the use of an api key. This was used in the headers for the requests we made.
-
-DataExtractor.list_number_of_stores() retrieves the number of stores the company has
-DataExtractor.retrieve_stores_data takes a supplied endpoint and concatenates data from each store into a dataframe, which is returns.
-DataCleaning.clean_store_data() cleans the data from the supplied dataframe and returns a cleaned dataframe. Once again, this deals with issues with dates, null values and other elements.
-The data is then uploaded to the local database as 'dim_store_details'
-
-# Task 6
-
-In this task we extract product details from an S3 bucket on AWS>
-
-DataExtractor.extract_from_s3 uses the boto3 package to download and extract the information from an s3 address and returns a pandas dataframe.
-DataCleaning.convert_product_weights normalises the quantities in the weights column so they are all in kg. This involves converting amounts from g, ml and oz and returning a unified dataframe.
-DataCleaning.clean_products_data performs other cleaning of the data.
-This is then uploaded as 'dim_products'.
-
-# Task 7
-
-We retrieve the product orders database by using DatabaseConnect.read_rds_table() after obtaining the right file name from DatabaseConnect.list_db_tables, and return a dataframe.
-DataCleaning.clean_orders_data() removes columns that are not necessary and performs other cleaning on the dataframe. This is then uploaded to the database as 'orders_table'.
-
-A temporary function, clean_explore used a regex we defined to sift a column. We went through each column one by one
+However, if we needed further work we explored a table with a temporary internal function which we used to sift through the data. This survices in the clean_orders_table method, but was used on all the tables and then deleted once we had produced the required results:
 
     def clean_explore(regex, column):
             mask = df[column].str.contains(
                 regex, regex=True, na=False)
             print(column, " : ", df[column][~mask].count(), df[column][~mask])
 
-         We would try a df.info() to see what we needed to apply the code to:
+Effectively we created a mask using a supplied regular expression for the type of data we were looking for. So, for example, if the column was to be numbers only, a regular expression of the kind: [\d]+ would be used, which would then create a mask we could then use to print where the values didn't adhere to this format.
+
+We would try a df.info() to see what we needed to apply the code at each stage. Here is an example from the card details dataframe:
 
          0   level_0            120123 non-null  int64
          1   index             120123 non-null  int64
@@ -142,16 +99,39 @@ A temporary function, clean_explore used a regex we defined to sift a column. We
          6   product_code      120123 non-null  object ✅
          7   product_quantity  120123 non-null  int64 ✅
 
-     mask = df.user_uuid.str.contains(
-         '\w{8}-\w{4}-\w{4}-\w{4}-\w{12}', regex=True, na=False)
-    print('user_uuid ', df.user_uuid[~mask].count(), df.user_uuid[~mask])
+We would then devise methods to clean based on the results of this exploration.
 
-    clean_explore('[a-zA-Z]+', 'card_number')
-    clean_explore('^[A-Z]+-\w{8}$', 'store_code')
-    clean_explore('\w{2}-\d+\w{1}', 'product_code')
-    print(df.product_quantity.min(), df.product_quantity.max())
-    print(df.level_0.min(), df.level_0.max())
-    print(df.index.min(), df.index.max())
+Nulls values were dealt with by reassigning the dataframe to exclude rows which included NULL viz.
+
+    df = df[df.COLUMN_NAME != 'NULL']
+
+There were also a number of rows in each table which contained garbage values. These were removed on each table by finding a regularly formatted column and identifying these with a mask, as per the 'clean_explore()' process.
+
+I appear to get errors from my use of this, so I am sure there is a better way to do it. However, it does have the intended effect, and so it remains until a better solution is offered.
+
+For dates, we also explored with masks. Here is an example of the output we got which informed the creation of the static `process_date` method.
+
+For example, using a mask we discovered the following non-standard dates:
+
+        # 360       1968 October 16  Year Month DD      1  %Y %B #d
+        # 1629      January 1951 27  Month Year DD      2
+        # 1996     November 1958 11  Month Year DD      2  %B %Y #d
+        # 3066      1946 October 18  Year Month DD      1
+        # ????           2012/10/21  Year/Month/DD      3  %Y/%m/%d
+
+This then informed the processing which occurs to convert these three formats. The crux of this is a `dt.strptime` function which extracts the information in these non standard formats and returns an appropriate object eg.
+
+    formatted_date = dt.strptime(
+                    unusual_date, '%Y/%m/%d')
+
+If a date does not conform, probably because it is not a date, we use the numpy NaN value to insert into the column.
+
+In the case of the products table, we needed to perform a conversion of values into all metric kg. This involves converting amounts from g, ml and oz and returning a unified dataframe.
+
+Once we had performed exploration and were satisfied with the data in a column, we would cast it as a type. For example here is the cleaning and casting of the continent column in 'clean_store_data'
+
+        df.continent = df.continent.str.replace('ee', '')
+        df.continent = df.continent.astype('string')
 
 # Task 8
 
