@@ -211,9 +211,10 @@ These are the answers:
 
 2.  Which locations have the most stores?
 
-<img src="./images/Q2.png" alt="Question 2" width=300px/>
+    <img src="./images/Q2.png" alt="Question 2" width=300px/>
 
 3.  Which months produce the average highest cost of sales typically?
+
     <img src="./images/Q3.png" alt="Question 3" width=300px/>
 
 4.  How many sales are coming from online?
