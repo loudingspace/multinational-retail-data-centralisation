@@ -43,7 +43,7 @@ class DataCleaning:
             'second': df.s
         })
 
-        df.drop(['timestamp', 'month', 'year', 'day',
+        df.drop(['month', 'year', 'day',
                 'h', 's', 'm'], axis=1, inplace=True)
 
         df.date_uuid = df.date_uuid.astype('string')

@@ -1,13 +1,22 @@
 {
-    "sqltools.connections": [
-        {
-            "previewLimit": 50,
-            "server": "127.0.0.1",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "database": "sales_data",
-            "username": "postgres",
-            "name": "sales_data"
-        }
-    ]
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "127.0.0.1",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "database": "sales_data",
+      "username": "postgres",
+      "name": "sales_data"
+    },
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "dvdrental",
+      "database": "dvdrental",
+      "username": "postgres"
+    }
+  ]
 }

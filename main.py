@@ -49,11 +49,11 @@ dc.upload_to_db(pdf_df, 'dim_card_details')
 # dc.upload_to_db(stores_df, 'dim_stores_details')
 
 
-# Task6
-products_df = de.extract_from_s3()
-products_df = clean.convert_product_weight(products_df)
-products_df = clean.clean_products_data(products_df)
-dc.upload_to_db(products_df, 'dim_products')
+# # Task6
+# products_df = de.extract_from_s3()
+# products_df = clean.convert_product_weight(products_df)
+# products_df = clean.clean_products_data(products_df)
+# dc.upload_to_db(products_df, 'dim_products')
 
 '''
 # Task 7
@@ -64,8 +64,10 @@ print(order_df.info())
 order_df = clean.clean_orders_table(order_df)
 dc.upload_to_db(order_df, 'orders_table')
 
-# Task 8
-date_events_df = de.extract_date_events(api_dict)
-date_events_df = clean.clean_date_events(date_events_df)
-dc.upload_to_db(date_events_df, 'dim_date_times')
 '''
+# # Task 8
+# date_events_df = de.extract_date_events(api_dict)
+# date_events_df = clean.clean_date_events(date_events_df)
+# dc.upload_to_db(date_events_df, 'dim_date_times')
+
+# TODO: I am going to have to add a column to the dim_date with the timestamp
