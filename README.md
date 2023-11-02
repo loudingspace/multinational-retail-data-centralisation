@@ -295,6 +295,6 @@ From the main downloaded directory:
 
 Will run the data extraction, data cleaning and database creation.
 
-For the star-based schema and SQL processing, this can be found in the `milestone3.ipynb` file.
+Then you can execute the `star_schema.sql` in pgadmin or vscode or whatever way you prefer to communicate with the postgres database. For more details on what is going on in this process, this can be found in the `milestone3.ipynb` file.
 
-For the SQL queries for the business case, this can be found in the `milestone4.ipynb`.
+For the SQL queries for the business case, this can be found in the `milestone4.ipynb`. The answers are also in the section above for Milestone 4.

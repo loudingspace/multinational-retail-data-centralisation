@@ -11,10 +11,15 @@ ALTER TABLE dim_users
 ALTER COLUMN first_name TYPE VARCHAR(255),
     ALTER COLUMN last_name TYPE VARCHAR(255),
     ALTER COLUMN date_of_birth TYPE DATE,
-    ALTER COLUMN country_code TYPE VARCHAR(2),
+    ALTER COLUMN country_code TYPE VARCHAR(3),
     ALTER COLUMN user_uuid TYPE UUID USING user_uuid::UUID,
     ALTER COLUMN join_date TYPE DATE;
 -- assign types for dim_store_details
+-- first clean up latitude and longitude
+UPDATE dim_stores_details
+SET latitude = NULL,
+    longitude = NULL
+WHERE store_code ILIKE 'WEB-1388012W';
 ALTER TABLE dim_stores_details
 ALTER COLUMN longitude TYPE FLOAT USING longitude::FLOAT,
     ALTER COLUMN locality TYPE VARCHAR(255),
@@ -24,7 +29,7 @@ ALTER COLUMN longitude TYPE FLOAT USING longitude::FLOAT,
     ALTER COLUMN store_type TYPE VARCHAR(255),
     ALTER COLUMN store_type DROP NOT NULL,
     ALTER COLUMN latitude TYPE FLOAT USING latitude::FLOAT,
-    ALTER COLUMN country_code TYPE VARCHAR(2),
+    ALTER COLUMN country_code TYPE VARCHAR(3),
     ALTER COLUMN continent TYPE VARCHAR(255);
 -- change NULL values to N/A    
 UPDATE dim_stores_details

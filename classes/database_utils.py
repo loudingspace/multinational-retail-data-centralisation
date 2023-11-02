@@ -61,7 +61,9 @@ class DatabaseConnector:
         except exc.SQLAlchemyError as e:
             print('There was a problem connecting to the database. \n', e)
 
-    def execute_star_schema(self):
+    def execute_star_schema(self):  # For future implementation
+        '''Ideally we would run the star schema here
+        '''
         pass
 
     def list_db_tables(self):
