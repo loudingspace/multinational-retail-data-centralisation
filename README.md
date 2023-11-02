@@ -135,7 +135,7 @@ Once we had performed exploration and were satisfied with the data in a column, 
 
 # Milestone 3
 
-This is where a star-based schema of the database was created. This involved the casting of types, and the creation of limited VARCHARs.
+This is where a star-based schema of the database was created. This involved the casting of types, and the creation of limited VARCHARs. The fully worked out version of this may be found at notebooks/milestone3.ipynb. The SQL queries alone may be found at `star_schema.sql`
 
 We used the following code:
 
@@ -182,8 +182,6 @@ To create a BOOL type, we needed to ensure that the table included True or False
 
 Note that it is "avaliable" not "available".
 
-TODO: In Milestone 2, we created a date field for the dim_date_times. I now realise that this will remove the time information, so we need to revisit this and make sure that a separate time column exists.
-
 We then created primary keys in each of the tables that are references in orders_table, namely:
 
     ALTER TABLE dim_date_times ADD PRIMARY KEY (date_uuid);
@@ -205,9 +203,46 @@ We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
 
 We deal with the answers to the in the milestone4.ipynb. This requires a connection to the database to be set up in the editor you use to read the markup file.
 
+These are the answers:
+
+1.  How many stores does the business have and in which countries?
+
+    <img src="./images/Q1.png" alt="Question 1" width=300px/>
+
+2.  Which locations have the most stores?
+
+<img src="./images/Q2.png" alt="Question 2" width=300px/>
+
+3.  Which months produce the average highest cost of sales typically?
+    <img src="./images/Q3.png" alt="Question 3" width=300px/>
+
+4.  How many sales are coming from online?
+
+    <img src="./images/Q4.png" alt="Question 4" width=450px/>
+
+5.  What percentage of sales comes through each type of store?
+
+    <img src="./images/Q5.png" alt="Question 5" width=450px/>
+
+6.  Which month in each year produced the highest cost of sales?
+
+    <img src="./images/Q6.png" alt="Question 6" width=300px/>
+
+7.  What is our staff headcount?
+
+    <img src="./images/Q7.png" alt="Question 7" width=300px/>
+
+8.  Which German store type is selling the most?
+
+    <img src="./images/Q8.png" alt="Question 8" width=400px/>
+
+9.  How quickly is the company making sales?
+
+    <img src="./images/Q9.png" alt="Question 9" width=600px/>
+
 # File structure of the project
 
-There are four folders: classes, notebooks, info and temp and a main.py file to run everything.
+There are four folders: classes, notebooks, info and temp.
 
 - /classes contains:
 
@@ -226,7 +261,9 @@ There are four folders: classes, notebooks, info and temp and a main.py file to 
   - postgresdb_creds.yaml
   - db_creds.yaml
 
-- temp contains any temporary files that are downloaded during the course of the project
+- /temp contains any temporary files that are downloaded during the course of the project
+
+- / the root folder contains this `README.md` file, a `main.py` file and the `star_schema.sql` file for Milestone 3.
 
 # Installation instructions
 
@@ -257,4 +294,5 @@ From the main downloaded directory:
 Will run the data extraction, data cleaning and database creation.
 
 For the star-based schema and SQL processing, this can be found in the `milestone3.ipynb` file.
+
 For the SQL queries for the business case, this can be found in the `milestone4.ipynb`.

@@ -30,8 +30,8 @@ ALTER COLUMN longitude TYPE FLOAT USING longitude::FLOAT,
 UPDATE dim_stores_details
 SET address = 'N/A',
     locality = 'N/A',
-    country_code = 'N/A',
-    WHERE store_code ILIKE 'WEB-1388012W';
+    country_code = 'N/A'
+WHERE store_code ILIKE 'WEB-1388012W';
 -- create weight_class
 ALTER TABLE dim_products
 ADD weight_class VARCHAR(14);
