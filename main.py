@@ -8,14 +8,11 @@ dc = DatabaseConnector()
 de = DataExtraction()
 clean = DataCleaning()
 
-# print(dir(DataExtraction))
-
 
 # Task 3
 # Use your list_db_tables method to get the name of the table containing user data.
 table_list = dc.list_db_tables()
 print(table_list)
-
 
 # Use the read_rds_table method to extract the table containing user data and return a pandas DataFrame.
 df = de.read_rds_table(dc._init_db_engine(), table_list[1])
@@ -33,9 +30,7 @@ dc.upload_to_db(pdf_df, 'dim_card_details')
 
 
 # Task 5
-# should probably put this in a file somewhere
-# should read this from a file
-api_dict = {"x-api-key": "yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX"}
+api_dict = de.read_api_key()  # read api key from the info directory
 a = de.list_number_stores(
     "https://aqj7u5id95.execute-api.eu-west-1.amazonaws.com/prod/number_stores", api_dict)
 

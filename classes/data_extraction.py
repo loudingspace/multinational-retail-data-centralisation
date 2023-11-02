@@ -21,6 +21,17 @@ class DataExtraction:
 
     SYSTEMPATH = os.getcwd()
 
+    def read_api_key(self):
+        pathname = self.SYSTEMPATH + '/info/api_key.json'
+
+        try:
+            with open(pathname)as f:
+                header_file = f.read()
+            return json.loads(header_file)
+        except FileNotFoundError as e:
+            print(
+                e, '\nAPI key not found. Make sure you have a api_key.json file in your /info directory with the x-api-key information.')
+
     def extract_from_s3(self):
         ''' uses the boto3 package to download and extract the information returning a pandas DataFrame.
 
