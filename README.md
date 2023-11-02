@@ -263,6 +263,8 @@ There are four folders: classes, notebooks, info and temp.
 
 - /temp contains any temporary files that are downloaded during the course of the project
 
+- /images contains images of results from the database for Milestone 4. These are used in this `README.md` file
+
 - / the root folder contains this `README.md` file, a `main.py` file and the `star_schema.sql` file for Milestone 3.
 
 # Installation instructions
