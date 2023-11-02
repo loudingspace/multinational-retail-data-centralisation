@@ -201,6 +201,8 @@ And then ensured these were foreign keys in their respective tables. This is an 
 
 We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
 
+## Milestone 4
+
 # File structure of the project
 
 There are four folders: classes, notebooks, info and temp and a main.py file to run everything.
@@ -216,9 +218,11 @@ There are four folders: classes, notebooks, info and temp and a main.py file to 
   - milestone3.ipynb
   - milestone4.ipynb
 
-- /info contains .yaml credentials files
+- /info contains .yaml credentials files. Make sure you rename the files with \_DUMMY at the end with the correct details.
 
-  - post
+  - api_key.json
+  - postgresdb_creds.yaml
+  - db_creds.yaml
 
 - temp contains any temporary files that are downloaded during the course of the project
 
@@ -226,24 +230,29 @@ There are four folders: classes, notebooks, info and temp and a main.py file to 
 
 You need to have sqlalchemy, pyyaml, pandas, boto3 installed. Use pip install <package> if you don't have these.
 
+You need to have a postgresql database set up, called "sales_data". The details for this should be in the postgresdb_cred.yaml file.
+
+    db_creds.yaml:
+        RDS_HOST: data-handling-project-readonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com
+        RDS_PASSWORD: \***\*\*\*\*\*\*\***
+        RDS_USER: **\*\***\*\***\*\***
+        RDS_DATABASE: postgres
+        RDS_PORT: 5432
+
+    postgres_db_creds.yaml:
+        HOST: "127.0.0.1"
+        USER: "postgres"
+        PASSWORD: \***\*\*\*\*\***
+        DATABASE: "sales_data"
+        PORT: 5432
+
 # Usage instructions
 
-Currently you need to create an info directory. In this place a yaml file with your postgres details and your RDS database details in the following format:
+From the main downloaded directory:
 
-db_creds.yaml:
-RDS_HOST: data-handling-project-readonly.cq2e8zno855e.eu-west-1.rds.amazonaws.com
-RDS_PASSWORD: \***\*\*\*\*\*\*\***
-RDS_USER: **\*\***\*\***\*\***
-RDS_DATABASE: postgres
-RDS_PORT: 5432
+    python main.py
 
-postgres_db_creds.yaml:
-HOST: "127.0.0.1"
-USER: "postgres"
-PASSWORD: \***\*\*\*\*\***
-DATABASE: "sales_data"
-PORT: 5432
+Will run the data extraction, data cleaning and database creation.
 
-# License information
-
-TBC
+For the star-based schema and SQL processing, this can be found in the `milestone3.ipynb` file.
+For the SQL queries for the business case, this can be found in the `milestone4.ipynb`.
