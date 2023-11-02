@@ -1,3 +1,10 @@
 info/db_creds.yaml
 info/postgresdb_creds.yaml
-temp/
+info/postgresdb_test.yaml
+info/postgresdb_refactor.yaml
+temp/database_utils.py 
+temp/date_details.json 
+temp/Mileston4Q5_percentages.xlsx 
+temp/products.csv 
+temp/stores.csv
+temp/~$Mileston4Q5_percentages.xlsx

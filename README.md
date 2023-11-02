@@ -1,26 +1,43 @@
-# multinational-retail-data-centralisation
-
-# Table of Contents, if the README file is long
+# Multinational Retail Data Centralisation
 
 # A description of the project:
 
 The scenario for this project is the following: a multinational company sells various goods across the globe.
 
-Problem: their sales data is spread across many different data sources making it not easily accessible or analysable by current members of the team.
+**Problem**: their sales data is spread across many different data sources making it not easily accessible or analysable by current members of the team.
+**Solution**: In an effort to become more data-driven, they would like to make its sales data accessible from one centralised location.
 
-Solution: In an effort to become more data-driven, they would like to make its sales data accessible from one centralised location.
+We wish to produce a system that stores the current company data in a database so that it's accessed from one centralised location and acts as a single source of truth for sales data.
 
-Your first goal will be to produce a system that stores the current company data in a database so that it's accessed from one centralised location and acts as a single source of truth for sales data.
+The project consists of three milestones:
 
-# Method for Milestone 2
+- Milestone 2: store the current company data in a database so that it's accessed from one centralised location and acts as a single source of truth for sales data.
 
-A postgres database, 'sales_data' was created locally. The relevant details for this are stored in a YAML file in the /info directory (this is not in this repo). Three classes were created in the classes folder.
+  - Extract the data from a multitude of sources in json, csv, pdf formats on hosted on different platforms.
+  - Clean the data using pandas.
+  - Store the data in a local postgres database using sqlalchemy
 
-# Task 3
+- Milestone 3: develop a star-based schema of the database, ensuring the columns are of the correct data types
 
-DataExtractor works as a utility class, and contains methods for extracting data from different sources.
-DatabaseConnector is used to connect with and upload data to the database.
-DataCleaning contains methods for cleaning the data.
+  - properly cast the individual tables to the correct datatypes, performing further cleaning if required
+  - create primary and foreign keys for the tables
+
+- Milestone 4: querying the data
+  - we write queries of the database to answer business questions that a centralised database can answer.
+
+# Milestone 2
+
+We wish to bring together all the data into one place, clean this data and then store it in a local database. For each of these tasks a class has been written:
+
+- DatabaseConnector is used to connect with and upload data to the database.
+- DataExtractor works as a utility class, and contains methods for extracting data from different sources.
+- DataCleaning contains methods for cleaning the data.
+
+A postgres database, 'sales_data' was created locally. The relevant login details for this are stored in a YAML file in the /info directory as postgresdb_creds.yaml. Another file for RDS credentials is also stored locally as info/db.creds.yaml. These files are in the .gitignore file and must be present for the project to work. A dummy version of these is supplied for reference.
+
+Our general method was to first extract the data, and develop methods in the DataExtractor class for this.
+
+Once data was extracted we would engage in cleaning. We looked at the following issues: Null Values, Dates, garbage data, additional characters added erroneously to fields.
 
 DatabaseConnector.init_db_engine() reads the returned dictionary from read_db_creads and returns an sqlalchemy engine.
 This engine is then used in the list_db_tables method which returns the names of tables that are stored in the RDS database.
