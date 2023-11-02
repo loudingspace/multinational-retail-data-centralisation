@@ -203,6 +203,8 @@ We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
 
 ## Milestone 4
 
+We deal with the answers to the in the milestone4.ipynb. This requires a connection to the database to be set up in the editor you use to read the markup file.
+
 # File structure of the project
 
 There are four folders: classes, notebooks, info and temp and a main.py file to run everything.
