@@ -17,6 +17,15 @@
       "name": "dvdrental",
       "database": "dvdrental",
       "username": "postgres"
+    },
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "sales_data_refactor",
+      "database": "sales_data_refactor",
+      "username": "postgres"
     }
   ]
 }
