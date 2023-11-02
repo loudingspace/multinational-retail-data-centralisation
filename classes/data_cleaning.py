@@ -4,22 +4,32 @@ from datetime import datetime as dt
 import numpy as np
 import re
 
+
 class DataCleaning:
     '''
     This will have methods to clean data from each of the data sources
     '''
 
     def clean_date_events(self, df):
+        '''Cleans the date events dataframe and returns cleaned version. We convert everything to a date.
+
+        Arguments:
+            df (dateframe): the dates dateframe
+
+        Returns:
+            dateframe
+
+        '''
         df.info()
 
-        df = df[df['timestamp'] != 'NULL'] # clear NULL rows
+        df = df[df['timestamp'] != 'NULL']  # clear NULL rows
 
         # remove garbage
         regex = '\d{2}:\d{2}:\d{2}'
         mask = df.timestamp.str.contains(regex, na=False, regex=True)
-        #print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
+        # print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
         df = df[mask]  # remove garbage values
-        #print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
+        # print(df.timestamp[~mask], '\nCount: ', df.timestamp[~mask].count())
 
         # want to consolidate the date info into one object.
         df.timestamp = df.timestamp.astype('string')
@@ -56,7 +66,7 @@ class DataCleaning:
         df.drop(['first_name', 'last_name', '1'], axis=1, inplace=True)
         df = df[df.level_0 != 'NULL']
 
-        ## this is what was used to explore the data. It is kept here as reference.
+        # this is what was used to explore the data. It is kept here as reference.
         def clean_explore(regex, column):
             mask = df[column].str.contains(
                 regex, regex=True, na=False)
@@ -130,7 +140,6 @@ class DataCleaning:
 
         df = df[df.opening_date != 'NULL']
 
-   
         df.address = df.address.str.replace('\n', ', ')
         df.address = df.address.astype('string')
 
@@ -176,10 +185,10 @@ class DataCleaning:
         return df
 
     def clean_card_data(self, df):
-        #print(df.iloc[50:70, 0:1])
+        # print(df.iloc[50:70, 0:1])
 
         df = df[df.card_number != 'NULL']  # remove null values
-        df.reset_index(inplace=True) 
+        df.reset_index(inplace=True)
         df = DataCleaning.process_date(df, 'date_payment_confirmed')
 
         column = 'expiry_date'
@@ -221,7 +230,7 @@ class DataCleaning:
             mask = df['weight'].str.contains(
                 regex, regex=True, na=False)
             df.weight[mask] = df['weight'][mask].apply(lambda_formula)
-            #print(df.weight[mask])  # for debugging
+            # print(df.weight[mask])  # for debugging
 
         # kg
         process_product_weight(
@@ -262,20 +271,20 @@ class DataCleaning:
         # remove nulls
         df = df[df.product_name != 'NULL']
 
-        #for column in df.columns:
-            #print(column, df[column].nunique())
+        # for column in df.columns:
+        # print(column, df[column].nunique())
 
         # product_name 1021
-        #print(df.product_name.unique())
+        # print(df.product_name.unique())
         # 828 values are duplicated but with different added dates
-        #print(df.product_name[df.product_name.duplicated()].count())
-        #print(df[df.product_name.duplicated()].head(30))
-        #print(df.product_name.groupby(
+        # print(df.product_name[df.product_name.duplicated()].count())
+        # print(df[df.product_name.duplicated()].head(30))
+        # print(df.product_name.groupby(
         #    df.product_name[df.product_name.duplicated()]).count())  # The date added values are different, as well as the uuid, so going to leave in for now
 
         # product_price 132
         # get rid of the £ signs. But delete any values that don't have pound signs beforehand!
-        #print(df.product_price.unique())
+        # print(df.product_price.unique())
 
         regex = '[£]\d+.\d+'
         mask = df.product_price.str.contains(regex, regex=True, na=False)
@@ -288,7 +297,7 @@ class DataCleaning:
         df.category = df.category.astype('string')
         df.removed = df.removed.astype('string')
 
-        #print('CLEANPRODUCTs \n', df.info())
+        # print('CLEANPRODUCTs \n', df.info())
 
         # df.drop(columns=['index'], inplace=True)
         return df
@@ -336,4 +345,3 @@ class DataCleaning:
         df.drop(columns=['index'], inplace=True)
 
         return df
-
