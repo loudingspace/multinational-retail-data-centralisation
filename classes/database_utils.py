@@ -12,21 +12,25 @@ class DatabaseConnector:
     SYSTEMPATH = os.getcwd()
 
     def __init__(self):
+        ''' Create an engine to connect to the local database
+        '''
         try:
             pathname = self.SYSTEMPATH + '/info/postgresdb_creds.yaml'
-
             with open(pathname) as file:
                 db_creds = yaml.safe_load(file)
-
                 HOST, USER, PASSWORD, DATABASE, PORT = db_creds.values()
 
+        except FileNotFoundError:
+            print('Sorry, the db config file is not currently available. Please check you have this in the info directory as postgresdb_creds.yaml')
+
+        try:
             self.engine = create_engine(
                 f"{DatabaseConnector.DATABASE_TYPE}+{DatabaseConnector.DBAPI}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}")
 
-        except FileNotFoundError:
-            print('Sorry, the db config file is not currently available.*******')
+        except exc.SQLAlchemyError as e:
+            print('There was a problem connecting to the local postgres database. \n', e)
 
-    def read_db_creds(self) -> dict:  # THIS SHOULD BE PRIVATE
+    def __read_db_creds(self) -> dict:  # PRIVATE method
         '''read the credentials yaml file and return a dictionary of the credentials
 
         Returns:
@@ -40,7 +44,7 @@ class DatabaseConnector:
         except FileNotFoundError:
             print('Sorry, the db config file is not currently available.')
 
-    def init_db_engine(self):  # not sure how to specify engine as a type
+    def _init_db_engine(self):  # PROTECTED for reasons of encapsulation
         '''read the credentials from the return of read_db_creds and initialise and return an sqlalchemy database engine.
 
         Returns:
@@ -48,7 +52,7 @@ class DatabaseConnector:
         '''
 
         try:
-            database_credentials = self.read_db_creds()
+            database_credentials = self.__read_db_creds()
             # destructure dictionary values
             RDS_HOST, RDS_PASSWORD, RDS_USER, RDS_DATABASE, RDS_PORT = database_credentials.values()
             return create_engine(
@@ -60,7 +64,7 @@ class DatabaseConnector:
     def list_db_tables(self):
         '''list all the tables in the database
         '''
-        engine = self.init_db_engine()
+        engine = self._init_db_engine()
         with engine.connect() as conn:
             inspector = inspect(engine)
             table_names = inspector.get_table_names()

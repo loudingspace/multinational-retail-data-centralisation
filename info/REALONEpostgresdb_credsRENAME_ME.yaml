@@ -1,5 +1,5 @@
 HOST: "127.0.0.1"
 USER: "postgres"
 PASSWORD: "ronald22"
-DATABASE: "sales_data_refactor"
+DATABASE: "sales_data"
 PORT: 5432

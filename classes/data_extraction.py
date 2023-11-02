@@ -8,13 +8,12 @@ import tabula
 from .data_cleaning import DataCleaning
 # need to prefix with a dot to access modules in same directory
 from .database_utils import DatabaseConnector
-from sqlalchemy import text, exc
+from sqlalchemy import text
 
 
 class DataExtraction:
     '''
-    This class will work as a utility class, in it you will be 
-    creating methods that help extract data from different data sources.
+    This class will work as a utility class that extracts data from different data sources.
 
     The methods contained will be fit to extract data from a particular data source, 
     these sources will include CSV files, an API and an S3 bucket.
@@ -38,7 +37,9 @@ class DataExtraction:
     def extract_date_events(self, header):
         ''' Extracts the date events in json from a supplied url and returns a dataframe.
 
-        Returns: dataframe
+        Argument: header(dict)
+
+        Returns: dataframe of date details
         '''
 
         header = {
@@ -50,17 +51,15 @@ class DataExtraction:
             'https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json', headers=header)
 
         date_events_dict = response.json()
-
         df = pd.DataFrame.from_dict(
             date_events_dict, orient='columns', dtype=None, columns=None)  # convert to df using reverse syntax for to_dict(orient='dict, into=dict)
         # Effective Pandas, Matt Harrison p323
-
         return df
 
     def read_rds_database(self):
         '''reads in the database from the RDS connection
 
-        Returns: object with database
+        Prints a query. This was used for testing purposes only.
         '''
 
         data_connect = DatabaseConnector()
@@ -74,10 +73,10 @@ class DataExtraction:
                     print(row)
 
     def read_rds_table(self, database_connector, table_name):
-        '''take in an instance of DatabaseConnector and a table name as an argument and return a pandas DataFrame.
+        '''take in an sqlalchemy engine and a table name as an argument and return a pandas DataFrame.
 
-        Parameters:
-        database_connector (DatabaseConnector): instance of DatabaseConnector
+        Arguments:
+        database_connector (sqlalechemy engine): the db_engine from DatabaseConnector
         table_name (str): table name of database
 
         Returns:

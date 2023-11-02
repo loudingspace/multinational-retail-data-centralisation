@@ -8,6 +8,7 @@ dc = DatabaseConnector()
 de = DataExtraction()
 clean = DataCleaning()
 
+print(dir(DataExtraction))
 
 '''
 

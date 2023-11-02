@@ -33,13 +33,43 @@ We wish to bring together all the data into one place, clean this data and then 
 - DataExtractor works as a utility class, and contains methods for extracting data from different sources.
 - DataCleaning contains methods for cleaning the data.
 
-A postgres database, 'sales_data' was created locally. The relevant login details for this are stored in a YAML file in the /info directory as postgresdb_creds.yaml. Another file for RDS credentials is also stored locally as info/db.creds.yaml. These files are in the .gitignore file and must be present for the project to work. A dummy version of these is supplied for reference.
-
 Our general method was to first extract the data, and develop methods in the DataExtractor class for this.
 
 Once data was extracted we would engage in cleaning. We looked at the following issues: Null Values, Dates, garbage data, additional characters added erroneously to fields.
 
-DatabaseConnector.init_db_engine() reads the returned dictionary from read_db_creads and returns an sqlalchemy engine.
+## Connecting to the local and remote database using DatabaseConnector
+
+A postgres database, 'sales_data' was created locally. The relevant login details for this are stored in a YAML file in the /info directory as postgresdb_creds.yaml. Another file for RDS credentials is also stored locally as info/db.creds.yaml. These files are in the .gitignore file and must be present for the project to work. A dummy version of these is supplied for reference.
+
+When DatabaseConnector is instantiated, a sqlalchemy engine is created as self.engine in the **init** method. This means we only create one engine per session, rather than making multiple connections.
+
+The following methods were written:
+
+    __read_db_creds(self): reads the credentials of the remote RDS database from a file, db_creds.yaml. This is a private method.
+    _init_db_engine(self): initialised a sqlalchemy engine connection to the RDS database. This is a protected method.
+    list_db_tables(self): lists the table names of the RDS database
+    upload_to_db(self, df, table_name): uploads a table to the postgres database using the self.engine
+
+## Extracting data from the various sources
+
+We use the DataExtraction class to extract data from different data sources. The methods extract data from a particular data source, these sources will include CSV and json files from a wesbite that requires an api authentication, from a S3 bucket, and parsing a pdf file. Each of the main extraction methods returns a dataframe of the data which will then be cleaned.
+
+    read_rds_table(database_connector, table_name)': this reads a table from the RDS database and returns a dataframe. This is used to extract the user and orders tables of the database.
+
+    retrieve_pdf_data(link): this reads in a pdf file, which we convert page by page using tabula-py package and the concatenate the results to return a dataframe.
+
+    list_number_stores(stores_endpoint, header): returns an integer of the number of stores using an api-key in the header
+    retrieve_stores_data(stores_endpoint, header): this retrieves data from each store which is concatenated into dataframe. We hard coded the number here, although this might be changed to included the output of list_number_stores().
+
+    extract_from_s3: uses boto package to download a .csv file of product values.from a public S3 bucket. We use the system to store this temporarily in the /temp folder and the read this to convert to a dataframe.
+
+    extract_date_events(header): downloads a .json file using the api-key and returns a dataframe
+
+## Cleaning data and uploading to the database
+
+The main.py file creates instances of the DataExtraction and DatabaseConnector classes. We use these with an instantiation of the DataCleaning class to perform the cleaning of the data for uploading to our local postgres database.
+
+init_db_engine() reads the returned dictionary from read_db_creads and returns an sqlalchemy engine.
 This engine is then used in the list_db_tables method which returns the names of tables that are stored in the RDS database.
 DatabaseConnector.read_rds_table() extracts a dataframe from an RDS database. We use this to return a pandas dataframe of the user data.
 DataCleaning.clean_user_data() performs cleaning of the user data. This includes looking for NULL values, making dates datetime64 objects, removing garbage values. The procedure for this was achieved after careful sifting of the information in the tables, including creating temporary functions to return unique values in a column, to mask regular columns such as dates with a regular expression to look for values that did not conform to the format, and creating a data processing method which returns a cleaned date column. This was then used in subsequent tasks.
