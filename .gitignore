@@ -2,9 +2,14 @@ info/db_creds.yaml
 info/postgresdb_creds.yaml
 info/postgresdb_test.yaml
 info/postgresdb_refactor.yaml
+info/api_key.json
+info/REALONEpostgresdb_credsRENAME_ME.yaml
+info/postgresdb_creds_test.yaml
 temp/database_utils.py 
 temp/date_details.json 
 temp/Mileston4Q5_percentages.xlsx 
 temp/products.csv 
 temp/stores.csv
 temp/~$Mileston4Q5_percentages.xlsx
+classes/__pycache__
+.DS_Store

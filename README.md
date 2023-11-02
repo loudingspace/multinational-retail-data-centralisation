@@ -133,10 +133,6 @@ Once we had performed exploration and were satisfied with the data in a column, 
         df.continent = df.continent.str.replace('ee', '')
         df.continent = df.continent.astype('string')
 
-# Task 8
-
-The data events table was obtained by downloading a json file from a public S3 bucket with DataExtraction.extract_date_events(). We then clean this by creating a new column just called date that amalgamates the other columns in the table. We then return this for uploading to the local database as 'dim_date_times'.
-
 # Milestone 3
 
 This is where a star-based schema of the database was created. This involved the casting of types, and the creation of limited VARCHARs.
@@ -209,11 +205,20 @@ We haven't added an ON DELETE CASCADE option yet. We may do this in the future.
 
 There are four folders: classes, notebooks, info and temp and a main.py file to run everything.
 
-- classes contains: data_cleaning.py - data_extraction.py - database_utils.py
+- /classes contains:
 
-- notebooks contains the work for Milestone 3
+  - data_cleaning.py
+  - data_extraction.py
+  - database_utils.py
 
-- info contains .yaml credentials files
+- /notebooks contains the work for Milestone 3 and Mileston 4
+
+  - milestone3.ipynb
+  - milestone4.ipynb
+
+- /info contains .yaml credentials files
+
+  - post
 
 - temp contains any temporary files that are downloaded during the course of the project
 
